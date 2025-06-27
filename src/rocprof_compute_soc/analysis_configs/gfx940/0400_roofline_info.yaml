@@ -1,6 +1,6 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX942 (MI300 A1 Series)
+  title: Roofline Information - GFX940 (MI300A A0)
 
   data source:
     - roofline_config:
@@ -34,7 +34,7 @@ Panel Config:
           - SQ_INSTS_VALU_MFMA_MOPS_F32
           - SQ_INSTS_VALU_MFMA_MOPS_F64
           - SQ_INSTS_VALU_MFMA_MOPS_I8
-          - SQ_INSTS_VALU_MFMA_MOPS_F8 # for FP8 support
+          - SQ_INSTS_VALU_MFMA_MOPS_F8 # For FP8 support
           # LDS
           - SQ_LDS_IDX_ACTIVE
           - SQ_LDS_BANK_CONFLICT

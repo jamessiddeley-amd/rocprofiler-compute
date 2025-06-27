@@ -1,13 +1,12 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX942 (MI300 A1 Series)
+  title: Roofline Information - gfx906
 
   data source:
     - roofline_config:
+        # gfx906 is not in the original roofline_calc.py SUPPORTED_DATATYPES dictionary; this list is based on gfx90a.
         supported_datatypes:
-          - "FP8"
           - "FP16"
-          - "BF16"
           - "FP32"
           - "FP64"
           - "I8"
@@ -15,7 +14,17 @@ Panel Config:
           - "I64"
 
         performance_counters:
-          # VALU
+          # base gfx9 counters
+          - TCC_EA_RDREQ_32B_sum
+          - TCC_EA_RDREQ_sum
+          - TCC_EA_WRREQ_64B_sum
+          - TCC_EA_WRREQ_sum
+          # gfx906 specific EA1 counters
+          - TCC_EA1_RDREQ_32B_sum
+          - TCC_EA1_RDREQ_sum
+          - TCC_EA1_WRREQ_64B_sum
+          - TCC_EA1_WRREQ_sum
+          # all other required VALU, MFMA, LDS, L1/L2 counters...
           - SQ_INSTS_VALU_ADD_F16
           - SQ_INSTS_VALU_MUL_F16
           - SQ_INSTS_VALU_FMA_F16
@@ -28,30 +37,17 @@ Panel Config:
           - SQ_INSTS_VALU_MUL_F64
           - SQ_INSTS_VALU_FMA_F64
           - SQ_INSTS_VALU_TRANS_F64
-          # MFMA
           - SQ_INSTS_VALU_MFMA_MOPS_F16
-          - SQ_INSTS_VALU_MFMA_MOPS_BF16
           - SQ_INSTS_VALU_MFMA_MOPS_F32
           - SQ_INSTS_VALU_MFMA_MOPS_F64
           - SQ_INSTS_VALU_MFMA_MOPS_I8
-          - SQ_INSTS_VALU_MFMA_MOPS_F8 # for FP8 support
-          # LDS
           - SQ_LDS_IDX_ACTIVE
           - SQ_LDS_BANK_CONFLICT
-          # L1 Cache (TCP)
           - TCP_TOTAL_CACHE_ACCESSES_sum
-          # L2 Cache (TCC)
           - TCP_TCC_WRITE_REQ_sum
           - TCP_TCC_ATOMIC_WITH_RET_REQ_sum
           - TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum
           - TCP_TCC_READ_REQ_sum
-          # HBM (TCC) - Non-MI200 generic
-          - TCC_BUBBLE_sum
-          - TCC_EA0_RDREQ_32B_sum
-          - TCC_EA0_RDREQ_sum
-          - TCC_EA0_WRREQ_64B_sum
-          - TCC_EA0_WRREQ_sum
-          # Other
           - End_Timestamp
           - Start_Timestamp
           - Kernel_Name
@@ -61,13 +57,13 @@ Panel Config:
           mfma_multiplier_default: 512
           lds_transaction_bytes: 4
           cache_line_bytes: 64
-          hbm_bubble_transaction_bytes: 128
-          hbm_ea_rd_32b_transaction_bytes: 32
-          hbm_ea_rd_other_transaction_bytes: 64
-          hbm_ea_wr_non_64b_transaction_bytes: 32
-          hbm_ea_wr_64b_transaction_bytes: 64
+          hbm_rd_32b_transaction_bytes: 32
+          hbm_rd_other_transaction_bytes: 64
+          hbm_wr_non_64b_transaction_bytes: 32 # gfx9/MI200 write logic uses non-64b vs 64b
+          hbm_wr_64b_transaction_bytes: 64
 
         arithmetic_intensity_equations:
+          # total_flops, valu_flops, mfma_*, lds_data, L1/L2cache_data are standard gfx9
           total_flops_base: |
             (($c.wave_size * (SQ_INSTS_VALU_ADD_F16 + 
                               SQ_INSTS_VALU_MUL_F16 + 
@@ -82,12 +78,8 @@ Panel Config:
                               (2 * SQ_INSTS_VALU_FMA_F64) + 
                               SQ_INSTS_VALU_TRANS_F64)) + 
              (SQ_INSTS_VALU_MFMA_MOPS_F16 * $c.mfma_multiplier_default) + 
-             (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $c.mfma_multiplier_default) + 
              (SQ_INSTS_VALU_MFMA_MOPS_F32 * $c.mfma_multiplier_default) + 
              (SQ_INSTS_VALU_MFMA_MOPS_F64 * $c.mfma_multiplier_default))
-
-          total_flops_fp8_addition: |
-            (SQ_INSTS_VALU_MFMA_MOPS_F8 * $c.mfma_multiplier_default)
 
           valu_flops: |
             (($c.wave_size * (SQ_INSTS_VALU_ADD_F16 + 
@@ -106,9 +98,6 @@ Panel Config:
           mfma_flops_f16: |
             (SQ_INSTS_VALU_MFMA_MOPS_F16 * $c.mfma_multiplier_default)
 
-          mfma_flops_bf16: |
-            (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $c.mfma_multiplier_default)
-
           mfma_flops_f32: |
             (SQ_INSTS_VALU_MFMA_MOPS_F32 * $c.mfma_multiplier_default)
 
@@ -117,9 +106,6 @@ Panel Config:
 
           mfma_iops_i8: |
             (SQ_INSTS_VALU_MFMA_MOPS_I8 * $c.mfma_multiplier_default)
-
-          mfma_flops_f8: |
-            (SQ_INSTS_VALU_MFMA_MOPS_F8 * $c.mfma_multiplier_default)
 
           lds_data: |
             ((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) * 
@@ -136,11 +122,26 @@ Panel Config:
                TCP_TCC_READ_REQ_sum)) * 
              $c.cache_line_bytes)
 
+          # HBM formula for gfx906, combining EA0 and EA1 traffic
+          # in derived_counters.xml, <gfx906 base="gfx9"> block inherits-
+          # from the <gfx9> block but overrides the FETCH_SIZE and WRITE_SIZE metrics
+          # - Read bytes: TCC_EA_RDREQ_32B_sum*32 + (TCC_EA_RDREQ_sum-TCC_EA_RDREQ_32B_sum)*64 
+          #               + TCC_EA1_RDREQ_32B_sum*32 + (TCC_EA1_RDREQ_sum-TCC_EA1_RDREQ_32B_sum)*64
+          # - Write bytes: (TCC_EA_WRREQ_sum-TCC_EA_WRREQ_64B_sum)*32 + TCC_EA_WRREQ_64B_sum*64
+          #                + (TCC_EA1_WRREQ_sum-TCC_EA1_WRREQ_64B_sum)*32 + TCC_EA1_WRREQ_64B_sum*64
+          # - hbm_data equation in the gfx906 YAML is the sum of these two expanded formulas
+          # /1024 removed because calc_ai works in bytes not KB
+
           hbm_data: |
-            ((TCC_BUBBLE_sum * $c.hbm_bubble_transaction_bytes) + 
-             (TCC_EA0_RDREQ_32B_sum * $c.hbm_ea_rd_32b_transaction_bytes) + 
-             ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 
-              $c.hbm_ea_rd_other_transaction_bytes) + 
-             ((TCC_EA0_WRREQ_sum - TCC_EA0_WRREQ_64B_sum) * 
-              $c.hbm_ea_wr_non_64b_transaction_bytes) + 
-             (TCC_EA0_WRREQ_64B_sum * $c.hbm_ea_wr_64b_transaction_bytes))
+            ((TCC_EA_RDREQ_32B_sum * $c.hbm_rd_32b_transaction_bytes) + 
+             ((TCC_EA_RDREQ_sum - TCC_EA_RDREQ_32B_sum) * 
+              $c.hbm_rd_other_transaction_bytes) + 
+             ((TCC_EA_WRREQ_sum - TCC_EA_WRREQ_64B_sum) * 
+              $c.hbm_wr_non_64b_transaction_bytes) + 
+             (TCC_EA_WRREQ_64B_sum * $c.hbm_wr_64b_transaction_bytes) + 
+             (TCC_EA1_RDREQ_32B_sum * $c.hbm_rd_32b_transaction_bytes) + 
+             ((TCC_EA1_RDREQ_sum - TCC_EA1_RDREQ_32B_sum) * 
+              $c.hbm_rd_other_transaction_bytes) + 
+             ((TCC_EA1_WRREQ_sum - TCC_EA1_WRREQ_64B_sum) * 
+              $c.hbm_wr_non_64b_transaction_bytes) + 
+             (TCC_EA1_WRREQ_64B_sum * $c.hbm_wr_64b_transaction_bytes))

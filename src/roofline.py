@@ -42,10 +42,8 @@ from utils.logger import (
     console_warning,
     demarcate,
 )
+from utils.roofline_config import load_roofline_config
 from utils.roofline_calc import (
-    MFMA_DATATYPES,
-    PEAK_OPS_DATATYPES,
-    SUPPORTED_DATATYPES,
     calc_ai,
     constuct_roof,
 )
@@ -175,7 +173,10 @@ class Roofline:
 
         console_debug("roofline", "Path: %s" % self.__run_parameters.get("workload_dir"))
         self.__ai_data = calc_ai(
-            self.__mspec, self.__run_parameters.get("sort_type"), ret_df
+            self.__mspec,
+            self.__run_parameters.get("sort_type"),
+            ret_df,
+            self.__args.config_dir
         )
 
         msg = "AI at each mem level:"
@@ -188,17 +189,18 @@ class Roofline:
 
         for dt in self.__run_parameters.get("roofline_data_type", []):
             gpu_arch = getattr(self.__mspec, "gpu_arch", "unknown_arch")
-            if (
-                "SUPPORTED_DATATYPES" not in globals()
-                or gpu_arch not in SUPPORTED_DATATYPES
-                or str(dt) not in SUPPORTED_DATATYPES[gpu_arch]
-            ):
-                console_error(
-                    "{} is not a supported datatype for roofline profiling on {} (arch: {})".format(
-                        str(dt), getattr(self.__mspec, "gpu_model", "N/A"), gpu_arch
-                    ),
-                    exit=False,
-                )
+            try:
+                roof_config = load_roofline_config(gpu_arch, self.__args.config_dir)
+                if str(dt) not in roof_config['supported_datatypes']:
+                    console_error(
+                        "{} is not a supported datatype for roofline profiling on {} (arch: {})".format(
+                            str(dt), getattr(self.__mspec, "gpu_model", "N/A"), gpu_arch
+                        ),
+                        exit=False,
+                    )
+                    continue
+            except (FileNotFoundError, KeyError):
+                console_error(f"Could not validate datatype '{dt}' due to missing or invalid roofline config for {gpu_arch}.")
                 continue
 
             ops_flops = "Ops" if (str(dt[:1]) == "I") else "Flops"
@@ -549,7 +551,7 @@ class Roofline:
             )
 
         # Plot peak VALU ceiling
-        if dtype in PEAK_OPS_DATATYPES:
+        if "valu" in self.__ceiling_data and self.__ceiling_data["valu"] and self.__ceiling_data["valu"][0] is not None:
             fig.add_trace(
                 go.Scatter(
                     x=self.__ceiling_data["valu"][0],
@@ -574,7 +576,7 @@ class Roofline:
             )
 
         # Plot peak MFMA ceiling
-        if dtype in MFMA_DATATYPES:
+        if "mfma" in self.__ceiling_data and self.__ceiling_data["mfma"] and self.__ceiling_data["mfma"][0] is not None:
             fig.add_trace(
                 go.Scatter(
                     x=self.__ceiling_data["mfma"][0],
@@ -614,13 +616,18 @@ class Roofline:
         """
         console_debug("roofline", "Generating roofline plot for CLI")
 
-        if not (str(dtype) in SUPPORTED_DATATYPES[self.__mspec.gpu_arch]):
-            console_error(
-                "{} is not a supported datatype for roofline profiling on {}".format(
-                    str(dtype), self.__mspec.gpu_model
-                ),
-                exit=False,
-            )
+        try:
+            roof_config = load_roofline_config(self.__mspec.gpu_arch, self.__args.config_dir)
+            if str(dtype) not in roof_config['supported_datatypes']:
+                console_error(
+                    "{} is not a supported datatype for roofline profiling on {}".format(
+                        str(dtype), self.__mspec.gpu_model
+                    ),
+                    exit=False,
+                )
+                return
+        except (FileNotFoundError, KeyError):
+            console_error(f"Could not validate datatype '{dtype}' for CLI plot due to missing or invalid roofline config for {self.__mspec.gpu_arch}.")
             return
 
         # Normalize workload_dir to get the base directory
@@ -696,7 +703,7 @@ class Roofline:
             roofline_parameters=self.__run_parameters,
             dtype=dtype,
         )
-        self.__ai_data = calc_ai(self.__mspec, self.__run_parameters["sort_type"], t_df)
+        self.__ai_data = calc_ai(self.__mspec, self.__run_parameters["sort_type"], t_df, self.__args.config_dir)
 
         plt.clf()
         plt.plotsize(plt.tw(), plt.th())
@@ -738,7 +745,7 @@ class Roofline:
             )
 
         # Plot VALU and MFMA Peak
-        if dtype in PEAK_OPS_DATATYPES:
+        if "valu" in self.__ceiling_data and self.__ceiling_data["valu"] and self.__ceiling_data["valu"][0] is not None:
             plt.plot(
                 self.__ceiling_data["valu"][0],
                 [
@@ -770,7 +777,7 @@ class Roofline:
         else:
             console_warning("No PEAK measurement available for {}".format(dtype))
 
-        if dtype in MFMA_DATATYPES:
+        if "mfma" in self.__ceiling_data and self.__ceiling_data["mfma"] and self.__ceiling_data["mfma"][0] is not None:
             plt.plot(
                 self.__ceiling_data["mfma"][0],
                 [
