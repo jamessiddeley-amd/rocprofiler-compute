@@ -775,7 +775,15 @@ class OmniSoC_Base:
                     for block_name in f.blocks
                     for ctr in f.blocks[block_name].elements
                 ]:
-                    pmc.append(ctr)
+                    if 'rocprofiler-sdk' in str(detect_rocprof(self.get_args())):
+                        if ctr.endswith('_sum'):
+                            base_name = ctr[:-4]
+                            pmc.append(f"{base_name}:name={ctr}")
+                        else:
+                            pmc.append(ctr)
+                    else:
+                        pmc.append(ctr)
+                        
                     if using_v3():
                         if is_counter_existed_in_extra_input_yaml(
                             accum_counters_def, ctr

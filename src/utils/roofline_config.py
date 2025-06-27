@@ -40,7 +40,7 @@ def _validate_roofline_config(config, arch):
     used_counters = set()
     for eq_string in config['arithmetic_intensity_equations'].values():
         temp_str = re.sub(r'\$[cm]\.[a-zA-Z0-9_]+', '', eq_string)
-        used_counters.update(re.findall(r'[A-Z][A-Z0-9_]+', temp_str))
+        used_counters.update(re.findall(r'\b[A-Z][A-Z0-9_]*[A-Z0-9](?:_sum)?\b', temp_str))
     
     used_but_not_declared = used_counters - declared_counters
     declared_but_not_used = declared_counters - used_counters - {"End_Timestamp", "Start_Timestamp", "Kernel_Name"}
