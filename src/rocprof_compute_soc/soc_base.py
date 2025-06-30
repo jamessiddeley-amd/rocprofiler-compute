@@ -568,7 +568,7 @@ class OmniSoC_Base:
     @demarcate
     def perfmon_coalesce(self, counters):
         """Sort and bucket all related performance counters to minimize required application passes"""
-
+        print("EXECUTING MODIFIED PERFMON_COALESCE. IF YOU SEE THIS, THE NEW CODE IS RUNNING.", flush=True)
         # Create workload directory
         # In some cases (i.e. --specs) path will not be given
         if hasattr(self.get_args(), "path"):
@@ -775,14 +775,7 @@ class OmniSoC_Base:
                     for block_name in f.blocks
                     for ctr in f.blocks[block_name].elements
                 ]:
-                    if 'rocprofiler-sdk' in str(detect_rocprof(self.get_args())):
-                        if ctr.endswith('_sum'):
-                            base_name = ctr[:-4]
-                            pmc.append(f"{base_name}:name={ctr}")
-                        else:
-                            pmc.append(ctr)
-                    else:
-                        pmc.append(ctr)
+                    pmc.append(ctr)
                         
                     if using_v3():
                         if is_counter_existed_in_extra_input_yaml(
