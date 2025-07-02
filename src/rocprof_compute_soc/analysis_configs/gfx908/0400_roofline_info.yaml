@@ -1,11 +1,11 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX908 (MI50/MI60) - Not Supported
+  title: Roofline Information - GFX906 (MI100) - Not Supported
 
   data source:
     - roofline_config:
         id: 401
-        title: Roofline Config for GFX908
+        title: Roofline Config for GFX906
         # Architecture does not support roofline analysis in this tool.
         # This file serves as a placeholder to satisfy the UI panel parser.
         # No calculation data (constants, equations) is included as it will not be used.
