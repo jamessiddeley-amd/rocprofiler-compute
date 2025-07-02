@@ -1,6 +1,6 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX908 (MI50/MI60) - Not Supported
+  title: Roofline Information - GFX908
 
   data source:
     - roofline_config:

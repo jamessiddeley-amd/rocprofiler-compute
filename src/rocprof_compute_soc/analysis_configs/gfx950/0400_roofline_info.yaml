@@ -1,6 +1,6 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX950 (MI350 Series)
+  title: Roofline Information - GFX950
 
   data source:
     - roofline_config:

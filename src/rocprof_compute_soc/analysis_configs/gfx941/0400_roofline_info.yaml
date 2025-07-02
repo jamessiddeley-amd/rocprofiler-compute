@@ -1,6 +1,6 @@
 Panel Config:
   id: 400
-  title: Roofline Information - GFX941 (MI300X A0)
+  title: Roofline Information - GFX941
 
   data source:
     - roofline_config:
