@@ -4,6 +4,8 @@ Panel Config:
 
   data source:
     - roofline_config:
+        id: 401
+        title: Roofline Config for GFX906
         # gfx906 is not in the original roofline_calc.py SUPPORTED_DATATYPES dictionary; this list is based on gfx90a.
         supported_datatypes:
           - "FP16"

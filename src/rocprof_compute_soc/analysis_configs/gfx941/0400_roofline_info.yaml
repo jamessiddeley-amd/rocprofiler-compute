@@ -4,6 +4,8 @@ Panel Config:
 
   data source:
     - roofline_config:
+        id: 401
+        title: Roofline Config for GFX941
         supported_datatypes:
           - "FP8"
           - "FP16"
