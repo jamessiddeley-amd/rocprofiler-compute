@@ -174,10 +174,14 @@ class Roofline:
             self.roof_setup()
 
         console_debug("roofline", "Path: %s" % self.__run_parameters.get("workload_dir"))
+        print( self.__run_parameters["workload_dir"])
         self.__ai_data = calc_ai(
-            self.__mspec, self.__run_parameters.get("sort_type"), ret_df
+            mspec=self.__mspec, 
+            sort_type=self.__run_parameters.get("sort_type"), 
+            ret_df=ret_df,
+            config_dir=self.__args.config_dir # <-- THIS IS THE FIX
         )
-
+        
         msg = "AI at each mem level:"
         for i in self.__ai_data:
             msg += "\n\t%s -> %s" % (i, self.__ai_data[i])

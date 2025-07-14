@@ -146,6 +146,16 @@ class OmniAnalyze_Base:
                 else file_io.find_1st_sub_dir(d[0])
             )
             sys_info = file_io.load_sys_info(sysinfo_path.joinpath("sysinfo.csv"))
+            
+            # conditionally load roofline.csv only if a roofline analysis is requested.
+            # this check must be adapted to your application's actual command-line flags.
+            print("Loading roofline peaks from:", sysinfo_path)
+            print("Report option:", getattr(self.__args, 'report', None))
+            if getattr(self.__args, 'report', None) != 'no-roof':
+                w.roofline_peaks = file_io.load_roofline_peaks(sysinfo_path)
+            else:
+                w.roofline_peaks = pd.DataFrame()
+      
             arch = sys_info.iloc[0]["gpu_arch"]
             args = self.__args
             self.generate_configs(

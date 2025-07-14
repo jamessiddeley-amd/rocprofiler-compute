@@ -682,7 +682,7 @@ def build_metric_value_string(dfs, dfs_type, normal_unit):
 
 
 @demarcate
-def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
+def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
     """
     Execute the expr string for each metric in the df.
     """
@@ -772,6 +772,26 @@ def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
         console_warning(
             "wave_size is not available in sysinfo.csv, please provide the correct value using --specs-correction"
         )
+
+    ammolite__mfma_multiplier_default = 512
+    ammolite__cache_line_bytes = 64
+    ammolite__lds_transaction_bytes = 4
+    ammolite__hbm_bubble_transaction_bytes = 128
+    ammolite__hbm_ea_rd_32b_transaction_bytes = 32
+    ammolite__hbm_ea_rd_other_transaction_bytes = 64
+    ammolite__hbm_ea_wr_non_64b_transaction_bytes = 32
+    ammolite__hbm_ea_wr_64b_transaction_bytes = 64
+    
+    print(empirical_peaks_df)
+    for metric_name in empirical_peaks_df.columns:
+        print(f"empirical peak {metric_name}:", empirical_peaks_df[metric_name].to_list())
+    
+    if not empirical_peaks_df.empty:
+        peak_data_row = empirical_peaks_df.iloc[0]
+        for metric_name in empirical_peaks_df.columns:
+            var_name = f"ammolite__peak_{metric_name}"
+            locals()[var_name] = peak_data_row[metric_name]
+
 
     # TODO: fix all $normUnit in Unit column or title
 
@@ -1196,7 +1216,7 @@ def load_pc_sampling_data_per_kernel(
             next_index = i + 1
             if next_index < len(filtered_sorted_list):  # Ensure the next item exists
                 next_item = filtered_sorted_list[next_index]
-                kernel_info["potential_end_offset"] = next_item[
+                kernel_info["potential_end_offset"] = item[
                     "kernel_code_entry_byte_offset"
                 ]
             else:
@@ -1449,6 +1469,7 @@ def load_table_data(workload, dir, is_gui, args, skipKernelTop=False):
         workload.dfs,
         workload.dfs_type,
         workload.sys_info.iloc[0],
+        workload.roofline_peaks,
         apply_filters(workload, dir, is_gui, args.debug),
         args.debug,
     )
