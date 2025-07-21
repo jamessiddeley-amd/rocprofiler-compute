@@ -1,230 +1,199 @@
 Panel Config:
   id: 400
   title: GFX942 Roofline Analysis
-  metric_table:
-      id: 401
-      title: Roofline Metrics for GFX942
-      cli_style: Roofline
-      tui_style: Roofline
-      header:
-        metric: Metric
-        value: Value
-        unit: Unit
-        peak: Peak (Empirical Max)
+  data source:
+    - metric_table:
+        id: 401
+        title: Roofline Performance Rates
+        header:
+          metric: Metric
+          value: Value
+          unit: Unit
+          peak: Peak (Empirical Max)
+        metric:
+          # ==================================================================
+          # GROUP 1: PERFORMANCE RATES (PER SECOND)
+          # ==================================================================
 
-      metric:
-        # ==================================================================
-        # GROUP 1: ROOFLINE RATE METRICS
-        # These are the final rates (per second) that are plotted on the chart.
-        # Each metric has a self-contained 'value' equation and a static 'peak'.
-        # ==================================================================
+          # --- Compute Rates ---
+          VALU FLOPs:
+            value: >-
+              ((($wave_size * (
+              (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
+              (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
+              (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
+              )) / (End_Timestamp - Start_Timestamp)))
+            unit: GFLOP/s
+            peak: $VALU_FLOPs_empirical_peak
+          MFMA FLOPs (F64):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GFLOP/s
+            peak: $MFMA_FLOPs_F64_empirical_peak
+          MFMA FLOPs (F32):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GFLOP/s
+            peak: $MFMA_FLOPs_F32_empirical_peak
+          MFMA FLOPs (F16):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GFLOP/s
+            peak: $MFMA_FLOPs_F16_empirical_peak
+          MFMA FLOPs (BF16):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GFLOP/s
+            peak: $MFMA_FLOPs_BF16_empirical_peak
+          MFMA FLOPs (F8):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GFLOP/s
+            peak: $MFMA_FLOPs_F8_empirical_peak
+          MFMA IOPs (Int8):
+            value: >-
+              (((SQ_INSTS_VALU_MFMA_MOPS_I8 * $mfma_multiplier_default)) / (End_Timestamp - Start_Timestamp))
+            unit: GIOP/s
+            peak: $MFMA_IOPs_Int8_empirical_peak
 
-        # --- Compute Performance Rates (GFLOP/s or GIOP/s) ---
-        FP64_PERFORMANCE:
-          # value: Equation for 'valu_flops_f64' from calc_ai, divided by time.
-          value: >-
-            (( ($wave_size * (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 +
-            (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 85106.04 # From roofline.csv -> FP64Flops High
+          # --- Bandwidth Rates ---
+          HBM Bandwidth:
+            value: >-
+              ((((TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
+              (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
+              ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * $hbm_ea_rd_other_transaction_bytes) +
+              ((TCC_EA0_WRREQ_sum - TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
+              (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes))) / (End_Timestamp - Start_Timestamp))
+            unit: GB/s
+            peak: $HBM_Bandwidth_empirical_peak
+          L2 Cache Bandwidth:
+            value: >-
+              ((((TCP_TCC_WRITE_REQ_sum + TCP_TCC_ATOMIC_WITH_RET_REQ_sum +
+              TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum + TCP_TCC_READ_REQ_sum) *
+              $cache_line_bytes)) / (End_Timestamp - Start_Timestamp))
+            unit: GB/s
+            peak: $L2_Cache_Bandwidth_empirical_peak
+          L1 Cache Bandwidth:
+            value: >-
+              (((TCP_TOTAL_CACHE_ACCESSES_sum * $cache_line_bytes)) / (End_Timestamp - Start_Timestamp))
+            unit: GB/s
+            peak: $L1_Cache_Bandwidth_empirical_peak
+          LDS Bandwidth:
+            value: >-
+              ((((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) *
+              $lds_transaction_bytes * $lds_banks_per_cu)) / (End_Timestamp - Start_Timestamp))
+            unit: GB/s
+            peak: $LDS_Bandwidth_empirical_peak
+    - metric_table:
+        id: 402
+        title: Roofline Calculation Data
+        header:
+          metric: Metric
+          value: Value
+          unit: Unit
+        metric:
+          # ==================================================================
+          # GROUP 2: TOTAL OPERATIONS & DATA (RAW COUNTS)
+          # ==================================================================
+          Total_FLOPs:
+            value: >-
+              (($wave_size * (
+              (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
+              (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
+              (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
+              )) +
+              (SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default) +
+              (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default) +
+              (SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default) +
+              (SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default) +
+              (SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default))
+            unit: GFLOPs
+          Total VALU FLOPs:
+            value: >-
+              ($wave_size * (
+              (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
+              (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
+              (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
+              ))
+            unit: GFLOPs
+          Total_HBM_Data:
+            value: >-
+              ((TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
+              (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
+              ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * $hbm_ea_rd_other_transaction_bytes) +
+              ((TCC_EA0_WRREQ_sum - TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
+              (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes))
+            unit: Bytes
+          Total L2 Cache Data:
+            value: >-
+              ((TCP_TCC_WRITE_REQ_sum + TCP_TCC_ATOMIC_WITH_RET_REQ_sum +
+              TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum + TCP_TCC_READ_REQ_sum) *
+              $cache_line_bytes)
+            unit: Bytes
+          Total L1 Cache Data:
+            value: '(TCP_TOTAL_CACHE_ACCESSES_sum * $cache_line_bytes)'
+            unit: Bytes
+          Total LDS Data:
+            value: >-
+              ((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) *
+              $lds_transaction_bytes * $lds_banks_per_cu)
+            unit: Bytes
 
-        FP32_PERFORMANCE:
-          # value: Equation for 'valu_flops_f32' from calc_ai, divided by time.
-          value: >-
-            (( ($wave_size * (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 +
-            (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 99696.98 # From roofline.csv -> FP32Flops High
+          # Final Calculated Metrics
+          AI_HBM:
+            value: |
+              (
+                (
+                  ($wave_size * (
+                    (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
+                    (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
+                    (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
+                  )) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default)
+                ) /
+                (
+                  (
+                    (TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
+                    (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
+                    ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * $hbm_ea_rd_other_transaction_bytes) +
+                    ((TCC_EA0_WRREQ_sum - TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
+                    (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes)
+                  ) if (
+                    (TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
+                    (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
+                    ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * $hbm_ea_rd_other_transaction_bytes) +
+                    ((TCC_EA0_WRREQ_sum - TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
+                    (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes)
+                  ) > 0 else 1
+                )
+              )
+            unit: FLOPs/Byte
 
-        FP16_PERFORMANCE:
-          # value: Equation for 'valu_flops_f16' from calc_ai, divided by time.
-          value: >-
-            (( ($wave_size * (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 +
-            (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16)) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 29423.50 # From roofline.csv -> FP16Flops High
+          Performance_GFLOPs:
+            value: |
+              (
+                (
+                  ($wave_size * (
+                    (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
+                    (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
+                    (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
+                  )) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default) +
+                  (SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default)
+                ) /
+                ((End_Timestamp - Start_Timestamp) / 1e9)
+              ) / 1e9
+            unit: GFLOP/s
 
-        # --- MFMA Performance Rates ---
-        FP64_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_flops_f64' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 109544.38 # From roofline.csv -> MFMAF64Flops High
 
-        FP32_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_flops_f32' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 404935.09 # From roofline.csv -> MFMAF32Flops High
 
-        FP16_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_flops_f16' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 1494895.00 # From roofline.csv -> MFMAF16Flops High
 
-        BF16_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_flops_bf16' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 733846.19 # From roofline.csv -> MFMABF16Flops High
 
-        FP8_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_flops_f8' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GFLOP/s
-          peak: 61841.93 # From roofline.csv -> FP8Flops High (Note: roofline.csv doesn't distinguish MFMA for this)
 
-        I8_MFMA_PERFORMANCE:
-          # value: Equation for 'mfma_iops_i8' from calc_ai, divided by time.
-          value: >-
-            (( (SQ_INSTS_VALU_MFMA_MOPS_I8 * $mfma_multiplier_default) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GIOP/s
-          peak: 113426.98 # From roofline.csv -> MFMAI8Ops High
-
-        # --- Bandwidth Rates (GB/s) ---
-        HBM_BANDWIDTH:
-          # value: Equation for 'hbm_data' from calc_ai, divided by time.
-          value: >-
-            (( ((TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
-            (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
-            ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) *
-            $hbm_ea_rd_other_transaction_bytes) + ((TCC_EA0_WRREQ_sum -
-            TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
-            (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes)) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GB/s
-          peak: 3924.40 # From roofline.csv -> HBMBw High
-
-        L2_CACHE_BANDWIDTH:
-          # value: Equation for 'L2cache_data' from calc_ai, divided by time.
-          value: >-
-            (( ((TCP_TCC_WRITE_REQ_sum + TCP_TCC_ATOMIC_WITH_RET_REQ_sum +
-            TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum + TCP_TCC_READ_REQ_sum) *
-            $cache_line_bytes) ) / ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GB/s
-          peak: 20383.82 # From roofline.csv -> L2Bw High
-
-        L1_CACHE_BANDWIDTH:
-          # value: Equation for 'L1cache_data' from calc_ai, divided by time.
-          value: >-
-            (( (TCP_TOTAL_CACHE_ACCESSES_sum * $cache_line_bytes) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GB/s
-          peak: 26277.91 # From roofline.csv -> L1Bw High
-
-        LDS_BANDWIDTH:
-          # value: Equation for 'lds_data' from calc_ai, divided by time.
-          value: >-
-            (( ((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) *
-            $lds_transaction_bytes * $lds_banks_per_cu) ) /
-            ((End_Timestamp - Start_Timestamp) / 1e9))
-          unit: GB/s
-          peak: 56013.40 # From roofline.csv -> LDSBw High
-
-        # ==================================================================
-        # GROUP 2: AI_DATA METRICS (for Table Views)
-        # These are the raw totals for each component, translated from calc_ai.
-        # They have a self-contained 'value' equation and NO 'peak' field.
-        # ==================================================================
-        total_flops:
-          # value: Equation for 'total_flops' from calc_ai.
-          value: >-
-            (($wave_size * ((SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 +
-            (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
-            (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 *
-            SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
-            (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 *
-            SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64))) +
-            (SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default) +
-            (SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default) +
-            (SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default) +
-            (SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default) +
-            (SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default))
-          unit: flops
-
-        valu_flops:
-          # value: Equation for 'valu_flops' from calc_ai.
-          value: >-
-            ($wave_size * ((SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 +
-            (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
-            (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 *
-            SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
-            (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 *
-            SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)))
-          unit: flops
-
-        mfma_flops_f64:
-          # value: Equation for 'mfma_flops_f64' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_F64 * $mfma_multiplier_default)'
-          unit: flops
-
-        mfma_flops_f32:
-          # value: Equation for 'mfma_flops_f32' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_F32 * $mfma_multiplier_default)'
-          unit: flops
-
-        mfma_flops_f16:
-          # value: Equation for 'mfma_flops_f16' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_F16 * $mfma_multiplier_default)'
-          unit: flops
-
-        mfma_flops_bf16:
-          # value: Equation for 'mfma_flops_bf16' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_BF16 * $mfma_multiplier_default)'
-          unit: flops
-
-        mfma_flops_f8:
-          # value: Equation for 'mfma_flops_f8' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_F8 * $mfma_multiplier_default)'
-          unit: flops
-
-        mfma_iops_i8:
-          # value: Equation for 'mfma_iops_i8' from calc_ai.
-          value: '(SQ_INSTS_VALU_MFMA_MOPS_I8 * $mfma_multiplier_default)'
-          unit: iops
-
-        hbm_data:
-          # value: Equation for 'hbm_data' from calc_ai.
-          value: >-
-            ((TCC_BUBBLE_sum * $hbm_bubble_transaction_bytes) +
-            (TCC_EA0_RDREQ_32B_sum * $hbm_ea_rd_32b_transaction_bytes) +
-            ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) *
-            $hbm_ea_rd_other_transaction_bytes) + ((TCC_EA0_WRREQ_sum -
-            TCC_EA0_WRREQ_64B_sum) * $hbm_ea_wr_non_64b_transaction_bytes) +
-            (TCC_EA0_WRREQ_64B_sum * $hbm_ea_wr_64b_transaction_bytes))
-          unit: bytes
-
-        L2cache_data:
-          # value: Equation for 'L2cache_data' from calc_ai.
-          value: >-
-            ((TCP_TCC_WRITE_REQ_sum + TCP_TCC_ATOMIC_WITH_RET_REQ_sum +
-            TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum + TCP_TCC_READ_REQ_sum) *
-            $cache_line_bytes)
-          unit: bytes
-
-        L1cache_data:
-          # value: Equation for 'L1cache_data' from calc_ai.
-          value: '(TCP_TOTAL_CACHE_ACCESSES_sum * $cache_line_bytes)'
-          unit: bytes
-
-        lds_data:
-          # value: Equation for 'lds_data' from calc_ai.
-          value: >-
-            ((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) *
-            $lds_transaction_bytes * $lds_banks_per_cu)
-          unit: bytes

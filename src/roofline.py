@@ -174,14 +174,10 @@ class Roofline:
             self.roof_setup()
 
         console_debug("roofline", "Path: %s" % self.__run_parameters.get("workload_dir"))
-        print( self.__run_parameters["workload_dir"])
         self.__ai_data = calc_ai(
-            mspec=self.__mspec, 
-            sort_type=self.__run_parameters.get("sort_type"), 
-            ret_df=ret_df,
-            config_dir=self.__args.config_dir # <-- THIS IS THE FIX
+            self.__mspec, self.__run_parameters.get("sort_type"), ret_df
         )
-        
+
         msg = "AI at each mem level:"
         for i in self.__ai_data:
             msg += "\n\t%s -> %s" % (i, self.__ai_data[i])
@@ -607,7 +603,7 @@ class Roofline:
 
         return fig
 
-    def cli_generate_plot(self, dtype):
+    def cli_generate_plot(self, dtype, points=None):
         """
         Plot CLI mode roofline analysis in terminal using plotext
 
@@ -667,16 +663,16 @@ class Roofline:
             self.__run_parameters["mem_level"].remove("vL1D")
             self.__run_parameters["mem_level"].append("L1")
 
-        roofline_csv = base_path / "roofline.csv"
-        if not roofline_csv.is_file():
-            console_log("roofline", "{} does not exist".format(roofline_csv))
-            return
+        # roofline_csv = base_path / "roofline.csv"
+        # if not roofline_csv.is_file():
+        #     console_log("roofline", "{} does not exist".format(roofline_csv))
+        #     return
 
-        pmc_perf_csv = base_path / "pmc_perf.csv"
-        if not pmc_perf_csv.is_file():
-            console_error("roofline", "{} does not exist".format(pmc_perf_csv))
-        t_df = OrderedDict()
-        t_df["pmc_perf"] = pd.read_csv(pmc_perf_csv)
+        # pmc_perf_csv = base_path / "pmc_perf.csv"
+        # if not pmc_perf_csv.is_file():
+        #     console_error("roofline", "{} does not exist".format(pmc_perf_csv))
+        # t_df = OrderedDict()
+        # t_df["pmc_perf"] = pd.read_csv(pmc_perf_csv)
 
         color_scheme = {
             "HBM": "blue+",
@@ -700,8 +696,7 @@ class Roofline:
             roofline_parameters=self.__run_parameters,
             dtype=dtype,
         )
-        self.__ai_data = calc_ai(self.__mspec, self.__run_parameters["sort_type"], t_df)
-
+        
         plt.clf()
         plt.plotsize(plt.tw(), plt.th())
 
@@ -807,33 +802,30 @@ class Roofline:
             console_warning("No MFMA measurement available for {}".format(dtype))
 
         # Plot Application AI
-        for cache_level in cache_hierarchy:
-            key = "ai_" + cache_level.lower()
-            if key in self.__ai_data:
-                for i in range(len(self.__ai_data["kernelNames"])):
-                    # Zero intensity level means no data reported for this cache level
-                    if self.__ai_data[key][0][i] > 0 and self.__ai_data[key][1][i] > 0:
-                        plt.plot(
-                            [self.__ai_data[key][0][i]],
-                            [self.__ai_data[key][1][i]],
-                            label="AI_"
-                            + cache_level
-                            + "_{}".format(self.__ai_data["kernelNames"][i]),
-                            color=color_scheme[cache_level],
-                            marker=kernel_markers[i % len(kernel_markers)],
-                        )
+        if points and all(k in points for k in ["ai", "performance", "kernel_names"]):
+            for i, kernel_name in enumerate(points["kernel_names"]):
+                ai_val = points["ai"][i]
+                perf_val = points["performance"][i]
+
+                # Only plot points with meaningful data
+                if ai_val > 0 and perf_val > 0:
+                    plt.plot(
+                        [ai_val],
+                        [perf_val],
+                        label=kernel_name,
+                        color="green+",
+                        marker=kernel_markers[i % len(kernel_markers)],
+                    )
                     console_debug(
                         "roofline",
-                        "AI_{}: {}, {}".format(
-                            self.__ai_data["kernelNames"][i],
-                            self.__ai_data[key][0][i],
-                            self.__ai_data[key][1][i],
-                        ),
+                        f"Plotting Point for {kernel_name}: AI={ai_val}, Perf={perf_val}",
                     )
+        else:
+            console_warning("No valid roofline data points were provided for plotting.")
 
         plt.xlabel("Arithmetic Intensity ({})s/Byte)".format(ops_flops))
         plt.ylabel("Performance (GFLOP/sec)")
-        plt.title("Roofline ({})".format(dtype))
+        plt.title("Roofline ({}) - {}".format(dtype, base_path))
 
         # Canvas config
         plt.theme("pro")

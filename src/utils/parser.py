@@ -789,7 +789,7 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
     if not empirical_peaks_df.empty:
         peak_data_row = empirical_peaks_df.iloc[0]
         for metric_name in empirical_peaks_df.columns:
-            var_name = f"ammolite__peak_{metric_name}"
+            var_name = f"ammolite__{metric_name}_empirical_peak"
             locals()[var_name] = peak_data_row[metric_name]
 
 
@@ -904,7 +904,9 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
                                 try:
                                     out = eval(compile(row[expr], "<string>", "eval"))
 
-                                    if np.isnan(out):
+                                    if isinstance(out, pd.Series):
+                                        row[expr] = out
+                                    elif np.isnan(out):
                                         row[expr] = ""
                                     else:
                                         row[expr] = out

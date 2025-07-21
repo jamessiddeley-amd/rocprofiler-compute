@@ -253,141 +253,343 @@ def calc_ceilings(roofline_parameters, dtype, benchmark_data):
 #                              Overlay application performance
 # -------------------------------------------------------------------------------------
 # Calculate relevant metrics for ai calculation
-# def calc_ai(mspec, sort_type, ret_df, config_dir):
-#     """
-#     Calculates roofline data by invoking the generic parser engine and then
-#     re-packaging the results into the legacy AI_Data format for backward
-#     compatibility with the rest of this script.
-#     """
-#     print(config_dir)
-#     roofline_yaml_path = Path(config_dir) / mspec.gpu_arch / "0400_roofline_info.yaml"
-#     if not roofline_yaml_path.exists():
-#         console_error(f"Roofline configuration for {mspec.gpu_arch} not found.")
-#         return [] # Return an empty list, matching the old function's failure behavior.
+def calc_ai(mspec, sort_type, ret_df):
+    """Given counter data, calculate arithmetic intensity for each kernel in the application."""
+    df = ret_df["pmc_perf"]
+    # Sort by top kernels or top dispatches?
+    df = df.sort_values(by=["Kernel_Name"])
+    df = df.reset_index(drop=True)
 
-#     # Step 2: Invoke the parser engine.
-#     # This single call replaces all the manual calculation loops from the old function.
-#     # It passes the raw PMC data and the path to our new YAML.
-#     # The parser returns a pandas DataFrame with a column for every metric in the YAML.
-#     # Note: The 'workload' object must be constructed here or passed in.
-#     # This example assumes a helper function can build it.
-#     workload = build_workload_object(mspec, ret_df, roofline_yaml_path)
-#     results_df = run_parser_for_workload(workload)
-    
-#     # `results_df` is now a DataFrame where each row is a kernel dispatch, and columns
-#     # are 'hbm_data', 'mfma_flops_f64', 'Kernel_Name', 'End_Timestamp', etc.
+    total_flops = valu_flops = mfma_flops_f6f4 = mfma_flops_f8 = mfma_flops_bf16 = (
+        mfma_flops_f16
+    ) = mfma_iops_i8 = mfma_flops_f32 = mfma_flops_f64 = lds_data = L1cache_data = (
+        L2cache_data
+    ) = hbm_data = calls = totalDuration = avgDuration = 0.0
 
-#     # Step 3: Re-package the DataFrame results into the old `myList` format.
-#     # This is the crucial step for backward compatibility.
-#     myList = []
-#     # We assume the parser returns one row per dispatch. If kernel aggregation is needed,
-#     # we must group the DataFrame by Kernel Name first.
-#     if sort_type == "kernels":
-#         # This groups by kernel and sums all numeric columns.
-#         kernel_groups = results_df.groupby('Kernel_Name')
-#         aggregated_results = kernel_groups.sum(numeric_only=True)
-#         # We also need to get the first value for non-numeric or metadata columns.
-#         aggregated_results['Kernel_Name'] = kernel_groups['Kernel_Name'].first()
-#         aggregated_results['num_calls'] = kernel_groups.size()
-#         results_to_process = aggregated_results
-#     else: # sort_type == "dispatches"
-#         results_to_process = results_df
+    kernelName = ""
 
-#     for _, row in results_to_process.iterrows():
-#         # Create an AI_Data object by mapping DataFrame columns to the dataclass fields.
-#         # The .get(column, 0.0) provides a default value if a metric wasn't calculated.
-#         ai_instance = AI_Data(
-#             KernelName=row.get('Kernel_Name', 'Unknown'),
-#             numCalls=row.get('num_calls', 1),
-            
-#             total_flops=row.get('total_flops', 0.0),
-#             valu_flops=row.get('valu_flops', 0.0),
-#             mfma_flops_f6f4=row.get('mfma_flops_f6f4', 0.0),
-#             mfma_flops_f8=row.get('mfma_flops_f8', 0.0),
-#             mfma_flops_f16=row.get('mfma_flops_f16', 0.0),
-#             mfma_flops_bf16=row.get('mfma_flops_bf16', 0.0),
-#             mfma_flops_f32=row.get('mfma_flops_f32', 0.0),
-#             mfma_flops_f64=row.get('mfma_flops_f64', 0.0),
-#             mfma_iops_i8=row.get('mfma_iops_i8', 0.0),
-#             lds_data=row.get('lds_data', 0.0),
-#             L1cache_data=row.get('L1cache_data', 0.0),
-#             L2cache_data=row.get('L2cache_data', 0.0),
-#             hbm_data=row.get('hbm_data', 0.0),
-            
-#             # Calculate total and average duration from the raw timestamps.
-#             totalDuration=(row.get('End_Timestamp', 0) - row.get('Start_Timestamp', 0)),
-#             avgDuration=(row.get('End_Timestamp', 0) - row.get('Start_Timestamp', 0)) / row.get('num_calls', 1)
-#         )
-#         myList.append(ai_instance)
-        
-#     # Step 4: Return the data in the exact same format as the old function.
-#     # The rest of roofline_calc.py will receive this list and function exactly as before.
-#     myList.sort(key=lambda x: x.totalDuration, reverse=True)
-    
-#     # The final processing loop from the old function can remain, as it operates on `myList`.
-#     intensities = {"ai_l1": [], "ai_l2": [], "ai_hbm": []}
-#     curr_perf = []
-#     kernelNames = []
-#     i = 0
-#     # Create list of top 5 intensities
-#     while i < TOP_N and i != len(myList):
-#         if myList[i].total_flops == 0:
-#             console_debug(
-#                 "No flops counted for {}, arithmetic intensities will not display on plots.".format(
-#                     myList[i].KernelName
-#                 )
-#             )
+    myList = []
+    at_end = False
+    next_kernelName = ""
 
-#         kernelNames.append(myList[i].KernelName)
-#         (
-#             intensities["ai_l1"].append(myList[i].total_flops / myList[i].L1cache_data)
-#             if myList[i].L1cache_data
-#             else intensities["ai_l1"].append(0)
-#         )
-#         # print("cur_ai_L1", myList[i].total_flops/myList[i].L1cache_data) if myList[i].L1cache_data else print("null")
-#         # print()
-#         (
-#             intensities["ai_l2"].append(myList[i].total_flops / myList[i].L2cache_data)
-#             if myList[i].L2cache_data
-#             else intensities["ai_l2"].append(0)
-#         )
-#         # print("cur_ai_L2", myList[i].total_flops/myList[i].L2cache_data) if myList[i].L2cache_data else print("null")
-#         # print()
-#         (
-#             intensities["ai_hbm"].append(myList[i].total_flops / myList[i].hbm_data)
-#             if myList[i].hbm_data
-#             else intensities["ai_hbm"].append(0)
-#         )
-#         # print("cur_ai_hbm", myList[i].total_flops/myList[i].hbm_data) if myList[i].hbm_data else print("null")
-#         # print()
-#         (
-#             curr_perf.append(myList[i].total_flops / myList[i].avgDuration)
-#             if myList[i].avgDuration
-#             else curr_perf.append(0)
-#         )
-#         # print("cur_perf", myList[i].total_flops/myList[i].avgDuration) if myList[i].avgDuration else print("null")
+    supported_dt = SUPPORTED_DATATYPES[mspec.gpu_arch]
 
-#         i += 1
+    for idx in df.index:
+        # CASE: Top kernels
+        # Calculate + append AI data if
+        # a) current KernelName is different than previous OR
+        # b) We've reached the end of list
+        if idx + 1 == df.shape[0]:
+            at_end = True
+        else:
+            next_kernelName = df["Kernel_Name"][idx + 1]
 
-#     intensityPoints = {"ai_l1": [], "ai_l2": [], "ai_hbm": []}
+        kernelName = df["Kernel_Name"][idx]
+        try:
+            total_flops += (
+                (
+                    64
+                    * (
+                        df["SQ_INSTS_VALU_ADD_F16"][idx]
+                        + df["SQ_INSTS_VALU_MUL_F16"][idx]
+                        + (2 * df["SQ_INSTS_VALU_FMA_F16"][idx])
+                        + df["SQ_INSTS_VALU_TRANS_F16"][idx]
+                    )
+                )
+                + (
+                    64
+                    * (
+                        df["SQ_INSTS_VALU_ADD_F32"][idx]
+                        + df["SQ_INSTS_VALU_MUL_F32"][idx]
+                        + (2 * df["SQ_INSTS_VALU_FMA_F32"][idx])
+                        + df["SQ_INSTS_VALU_TRANS_F32"][idx]
+                    )
+                )
+                + (
+                    64
+                    * (
+                        df["SQ_INSTS_VALU_ADD_F64"][idx]
+                        + df["SQ_INSTS_VALU_MUL_F64"][idx]
+                        + (2 * df["SQ_INSTS_VALU_FMA_F64"][idx])
+                        + df["SQ_INSTS_VALU_TRANS_F64"][idx]
+                    )
+                )
+                + (df["SQ_INSTS_VALU_MFMA_MOPS_F16"][idx] * 512)
+                + (df["SQ_INSTS_VALU_MFMA_MOPS_BF16"][idx] * 512)
+                + (df["SQ_INSTS_VALU_MFMA_MOPS_F32"][idx] * 512)
+                + (df["SQ_INSTS_VALU_MFMA_MOPS_F64"][idx] * 512)
+            )
+            if "FP8" in supported_dt:
+                total_flops += df["SQ_INSTS_VALU_MFMA_MOPS_F8"][idx] * 512
+            if ("FP4" in supported_dt) or ("FP6" in supported_dt):
+                total_flops += df["SQ_INSTS_VALU_MFMA_MOPS_F6F4"][idx] * 512
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped total_flops at index {}".format(kernelName[:35], idx),
+            )
+            pass
+        try:
+            valu_flops += (
+                64
+                * (
+                    df["SQ_INSTS_VALU_ADD_F16"][idx]
+                    + df["SQ_INSTS_VALU_MUL_F16"][idx]
+                    + (2 * df["SQ_INSTS_VALU_FMA_F16"][idx])
+                    + df["SQ_INSTS_VALU_TRANS_F16"][idx]
+                )
+                + 64
+                * (
+                    df["SQ_INSTS_VALU_ADD_F32"][idx]
+                    + df["SQ_INSTS_VALU_MUL_F32"][idx]
+                    + (2 * df["SQ_INSTS_VALU_FMA_F32"][idx])
+                    + df["SQ_INSTS_VALU_TRANS_F32"][idx]
+                )
+                + 64
+                * (
+                    df["SQ_INSTS_VALU_ADD_F64"][idx]
+                    + df["SQ_INSTS_VALU_MUL_F64"][idx]
+                    + (2 * df["SQ_INSTS_VALU_FMA_F64"][idx])
+                    + df["SQ_INSTS_VALU_TRANS_F64"][idx]
+                )
+            )
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped valu_flops at index {}".format(kernelName[:35], idx),
+            )
+            pass
 
-#     for i in intensities:
-#         values = intensities[i]
+        try:
+            if "FP8" in supported_dt:
+                mfma_flops_f8 += df["SQ_INSTS_VALU_MFMA_MOPS_F8"][idx] * 512
+            if ("FP4" in supported_dt) or ("FP6" in supported_dt):
+                mfma_flops_f6f4 += df["SQ_INSTS_VALU_MFMA_MOPS_F6F4"][idx] * 512
+            mfma_flops_f16 += df["SQ_INSTS_VALU_MFMA_MOPS_F16"][idx] * 512
+            mfma_flops_bf16 += df["SQ_INSTS_VALU_MFMA_MOPS_BF16"][idx] * 512
+            mfma_flops_f32 += df["SQ_INSTS_VALU_MFMA_MOPS_F32"][idx] * 512
+            mfma_flops_f64 += df["SQ_INSTS_VALU_MFMA_MOPS_F64"][idx] * 512
+            mfma_iops_i8 += df["SQ_INSTS_VALU_MFMA_MOPS_I8"][idx] * 512
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped mfma ops at index {}".format(kernelName[:35], idx),
+            )
+            pass
 
-#         color = get_color(i)
-#         x = []
-#         y = []
-#         for entryIndx in range(0, len(values)):
-#             x.append(values[entryIndx])
-#             y.append(curr_perf[entryIndx])
+        try:
+            lds_data += (
+                (df["SQ_LDS_IDX_ACTIVE"][idx] - df["SQ_LDS_BANK_CONFLICT"][idx])
+                * 4
+                * (mspec.lds_banks_per_cu)
+            )
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped lds_data at index {}".format(kernelName[:35], idx),
+            )
+            pass
 
-#         intensityPoints[i].append(x)
-#         intensityPoints[i].append(y)
+        try:
+            L1cache_data += df["TCP_TOTAL_CACHE_ACCESSES_sum"][idx] * 64
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped L1cache_data at index {}".format(kernelName[:35], idx),
+            )
+            pass
 
-#     # Add an entry for kernel names
-#     intensityPoints["kernelNames"] = kernelNames
+        try:
+            L2cache_data += (
+                df["TCP_TCC_WRITE_REQ_sum"][idx] * 64
+                + df["TCP_TCC_ATOMIC_WITH_RET_REQ_sum"][idx] * 64
+                + df["TCP_TCC_ATOMIC_WITHOUT_RET_REQ_sum"][idx] * 64
+                + df["TCP_TCC_READ_REQ_sum"][idx] * 64
+            )
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped L2cache_data at index {}".format(kernelName[:35], idx),
+            )
+            pass
+        try:
+            if mspec.gpu_series == "MI200":
+                hbm_data += (
+                    (df["TCC_EA_RDREQ_32B_sum"][idx] * 32)
+                    + (
+                        (df["TCC_EA_RDREQ_sum"][idx] - df["TCC_EA_RDREQ_32B_sum"][idx])
+                        * 64
+                    )
+                    + (df["TCC_EA_WRREQ_64B_sum"][idx] * 64)
+                    + (
+                        (df["TCC_EA_WRREQ_sum"][idx] - df["TCC_EA_WRREQ_64B_sum"][idx])
+                        * 32
+                    )
+                )
 
-#     return intensityPoints
+            else:
+                # Use TCC_BUBBLE_sum to calculate hbm_data
+                hbm_data += (
+                    (df["TCC_BUBBLE_sum"][idx] * 128)
+                    + (df["TCC_EA0_RDREQ_32B_sum"][idx] * 32)
+                    + (
+                        (
+                            df["TCC_EA0_RDREQ_sum"][idx]
+                            - df["TCC_BUBBLE_sum"][idx]
+                            - df["TCC_EA0_RDREQ_32B_sum"][idx]
+                        )
+                        * 64
+                    )
+                    + (
+                        (df["TCC_EA0_WRREQ_sum"][idx] - df["TCC_EA0_WRREQ_64B_sum"][idx])
+                        * 32
+                    )
+                    + (df["TCC_EA0_WRREQ_64B_sum"][idx] * 64)
+                )
+        except KeyError:
+            console_debug(
+                "roofline",
+                "{}: Skipped hbm_data at index {}".format(kernelName[:35], idx),
+            )
+            pass
+
+        totalDuration += df["End_Timestamp"][idx] - df["Start_Timestamp"][idx]
+        avgDuration += df["End_Timestamp"][idx] - df["Start_Timestamp"][idx]
+
+        calls += 1
+
+        if sort_type == "kernels" and (at_end == True or (kernelName != next_kernelName)):
+            myList.append(
+                AI_Data(
+                    kernelName,
+                    calls,
+                    total_flops / calls,
+                    valu_flops / calls,
+                    mfma_flops_f6f4 / calls,
+                    mfma_flops_f8 / calls,
+                    mfma_flops_f16 / calls,
+                    mfma_flops_bf16 / calls,
+                    mfma_flops_f32 / calls,
+                    mfma_flops_f64 / calls,
+                    mfma_iops_i8 / calls,
+                    lds_data / calls,
+                    L1cache_data / calls,
+                    L2cache_data / calls,
+                    hbm_data / calls,
+                    totalDuration,
+                    avgDuration / calls,
+                )
+            )
+            console_debug(
+                "Just added {} to AI_Data at index {}. # of calls: {}".format(
+                    kernelName, idx, calls
+                )
+            )
+            total_flops = valu_flops = mfma_flops_f6f4 = mfma_flops_f8 = (
+                mfma_flops_bf16
+            ) = mfma_flops_f16 = mfma_iops_i8 = mfma_flops_f32 = mfma_flops_f64 = (
+                lds_data
+            ) = L1cache_data = L2cache_data = hbm_data = calls = totalDuration = (
+                avgDuration
+            ) = 0.0
+
+        if sort_type == "dispatches":
+            myList.append(
+                AI_Data(
+                    kernelName,
+                    calls,
+                    total_flops,
+                    valu_flops,
+                    mfma_flops_f6f4,
+                    mfma_flops_f8,
+                    mfma_flops_f16,
+                    mfma_flops_bf16,
+                    mfma_flops_f32,
+                    mfma_flops_f64,
+                    mfma_iops_i8,
+                    lds_data,
+                    L1cache_data,
+                    L2cache_data,
+                    hbm_data,
+                    totalDuration,
+                    avgDuration,
+                )
+            )
+            total_flops = valu_flops = mfma_flops_f6f4 = mfma_flops_f8 = (
+                mfma_flops_bf16
+            ) = mfma_flops_f16 = mfma_iops_i8 = mfma_flops_f32 = mfma_flops_f64 = (
+                lds_data
+            ) = L1cache_data = L2cache_data = hbm_data = calls = totalDuration = (
+                avgDuration
+            ) = 0.0
+
+    myList.sort(key=lambda x: x.totalDuration, reverse=True)
+
+    intensities = {"ai_l1": [], "ai_l2": [], "ai_hbm": []}
+    curr_perf = []
+    kernelNames = []
+    i = 0
+    # Create list of top 5 intensities
+    while i < TOP_N and i != len(myList):
+        if myList[i].total_flops == 0:
+            console_debug(
+                "No flops counted for {}, arithmetic intensities will not display on plots.".format(
+                    myList[i].KernelName
+                )
+            )
+
+        kernelNames.append(myList[i].KernelName)
+        (
+            intensities["ai_l1"].append(myList[i].total_flops / myList[i].L1cache_data)
+            if myList[i].L1cache_data
+            else intensities["ai_l1"].append(0)
+        )
+        # print("cur_ai_L1", myList[i].total_flops/myList[i].L1cache_data) if myList[i].L1cache_data else print("null")
+        # print()
+        (
+            intensities["ai_l2"].append(myList[i].total_flops / myList[i].L2cache_data)
+            if myList[i].L2cache_data
+            else intensities["ai_l2"].append(0)
+        )
+        # print("cur_ai_L2", myList[i].total_flops/myList[i].L2cache_data) if myList[i].L2cache_data else print("null")
+        # print()
+        (
+            intensities["ai_hbm"].append(myList[i].total_flops / myList[i].hbm_data)
+            if myList[i].hbm_data
+            else intensities["ai_hbm"].append(0)
+        )
+        # print("cur_ai_hbm", myList[i].total_flops/myList[i].hbm_data) if myList[i].hbm_data else print("null")
+        # print()
+        (
+            curr_perf.append(myList[i].total_flops / myList[i].avgDuration)
+            if myList[i].avgDuration
+            else curr_perf.append(0)
+        )
+        # print("cur_perf", myList[i].total_flops/myList[i].avgDuration) if myList[i].avgDuration else print("null")
+
+        i += 1
+
+    intensityPoints = {"ai_l1": [], "ai_l2": [], "ai_hbm": []}
+
+    for i in intensities:
+        values = intensities[i]
+
+        color = get_color(i)
+        x = []
+        y = []
+        for entryIndx in range(0, len(values)):
+            x.append(values[entryIndx])
+            y.append(curr_perf[entryIndx])
+
+        intensityPoints[i].append(x)
+        intensityPoints[i].append(y)
+
+    # Add an entry for kernel names
+    intensityPoints["kernelNames"] = kernelNames
+
+    return intensityPoints
+
+
 
 
 def constuct_roof(roofline_parameters, dtype):

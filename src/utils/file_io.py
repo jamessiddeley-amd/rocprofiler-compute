@@ -64,6 +64,17 @@ def load_sys_info(f):
     """
     return pd.read_csv(f)
 
+def load_roofline_peaks(f):
+    """
+    Load empirical roofline peak values from a csv file to a df.
+    """
+    return pd.read_csv(f)
+
+def create_empty_dataframe():
+    """
+    Returns an empty pandas DataFrame.
+    """
+    return pd.DataFrame()
 
 def load_panel_configs(dir):
     """
@@ -342,18 +353,3 @@ def find_1st_sub_dir(directory):
     except FileNotFoundError:
         print(f"The directory '{directory}' does not exist.")
     return None
-
-def load_roofline_peaks(workload_dir: Path) -> pd.DataFrame:
-    """
-    Finds and loads the roofline.csv file into a pandas DataFrame.
-    Returns only the first row of data, assuming a single device benchmark.
-    Returns an empty DataFrame if the file is not found or is unreadable.
-    """
-    roofline_csv_path = workload_dir / 'roofline.csv'
-    if roofline_csv_path.exists():
-        try:
-            return pd.read_csv(roofline_csv_path).iloc[[0]]
-        except Exception as e:
-            console_warning(f"Failed to parse {roofline_csv_path}: {e}")
-    
-    return pd.DataFrame()
