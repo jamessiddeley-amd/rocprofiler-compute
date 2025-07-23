@@ -317,7 +317,6 @@ def process_panels_to_dataframes(
 
     # Initialize the result structure
     result_structure = defaultdict(dict)
-
     for panel_id, panel in archConfigs.panel_configs.items():
         # Skip panels that don't support baseline comparison
         if panel_id in HIDDEN_SECTIONS:

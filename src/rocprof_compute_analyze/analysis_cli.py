@@ -79,6 +79,7 @@ class cli_analysis(OmniAnalyze_Base):
     def run_analysis(self):
         """Run CLI analysis."""
         super().run_analysis()
+
         if self.get_args().list_stats:
             tty.show_kernel_stats(
                 self.get_args(),
@@ -90,43 +91,24 @@ class cli_analysis(OmniAnalyze_Base):
             )
         else:
             roof_plot = None
-            
+            # 1. check if not baseline && compatible soc:
             if (len(self.get_args().path)) == 1 and self._runs[
                 self.get_args().path[0][0]
             ].sys_info.iloc[0]["gpu_arch"] in [
-                "gfx90a", "gfx940", "gfx941", "gfx942", "gfx950",
+                "gfx90a",
+                "gfx940",
+                "gfx941",
+                "gfx942",
+                "gfx950",
             ]:
+                # add roofline plot to cli output
                 roof_obj = self.get_socs()[
                     self._runs[self.get_args().path[0][0]].sys_info.iloc[0]["gpu_arch"]
                 ].roofline_obj
 
-            if roof_obj:
-                workload = self._runs[self.get_args().path[0][0]]
-                
-                if 402 in workload.dfs and not workload.dfs[402].empty:
-                    calc_df = workload.dfs[402].set_index('Metric')
-
-                    if 'Performance_GFLOPs' in calc_df.index and 'AI_HBM' in calc_df.index:
-                        # 1. Extract the final, calculated data series.
-                        #    Note: The .iloc[0] is used because the parser returns a single aggregated value.
-                        perf_series = calc_df.loc['Performance_GFLOPs']['Value'].item()
-                        ai_series = calc_df.loc['AI_HBM']['Value'].item()
-                        kernel_names = workload.raw_pmc['pmc_perf']['Kernel_Name'].unique()
-
-                        # 2. Assemble the data into a clean dictionary for the plotting function.
-                        plot_points = {
-                            "performance": [perf_series],
-                            "ai": [ai_series],
-                            "kernel_names": list(kernel_names)
-                        }
-                        print(plot_points)
-                        # 3. Call the plot generator with the prepared data.
-                        roof_plot = roof_obj.cli_generate_plot(
-                            dtype=roof_obj.get_dtype()[0], 
-                            points=plot_points
-                        )
-                else:
-                    console_warning("Roofline calculation data (table 402) not found or is empty.")
+                if roof_obj:
+                    # NOTE: using default data type
+                    roof_plot = roof_obj.cli_generate_plot(roof_obj.get_dtype()[0])
 
             tty.show_all(
                 self.get_args(),

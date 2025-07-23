@@ -71,7 +71,6 @@ class OmniAnalyze_Base:
                 config_dir if single_panel_config else config_dir.joinpath(arch)
             )
             ac.panel_configs = file_io.load_panel_configs(arch_panel_config)
-
         # TODO: filter_metrics should/might be one per arch
         # print(ac)
 
@@ -173,7 +172,6 @@ class OmniAnalyze_Base:
             )
             w.sys_info = file_io.load_sys_info(sysinfo_path.joinpath("sysinfo.csv"))
             
-            print(self.__args)
             if not getattr(self.get_args(), "no_roof", False):
                 try:
                     roofline_path = sysinfo_path.joinpath("roofline.csv")

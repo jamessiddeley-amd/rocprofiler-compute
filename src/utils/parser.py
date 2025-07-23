@@ -94,6 +94,7 @@ supported_call = {
     # If it has args like list [], in which turn to a python function.
     "MIN": "to_min",
     "MAX": "to_max",
+    "SUM": "to_sum",
     # simple aggr
     "AVG": "to_avg",
     "MEDIAN": "to_median",
@@ -132,6 +133,18 @@ def to_max(*args):
         return np.nan
     else:
         return max(args)
+    
+def to_sum(a):
+    if str(type(a)) == "<class 'NoneType'>":
+        return np.nan
+    elif np.isnan(a).all():
+        return np.nan
+    elif a.empty:
+        return np.nan
+    elif isinstance(a, pd.core.series.Series):
+        return a.sum()
+    else:
+        raise Exception("to_sum: unsupported type.")
 
 
 def to_avg(a):
@@ -781,11 +794,7 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
     ammolite__hbm_ea_rd_other_transaction_bytes = 64
     ammolite__hbm_ea_wr_non_64b_transaction_bytes = 32
     ammolite__hbm_ea_wr_64b_transaction_bytes = 64
-    
-    print(empirical_peaks_df)
-    for metric_name in empirical_peaks_df.columns:
-        print(f"empirical peak {metric_name}:", empirical_peaks_df[metric_name].to_list())
-    
+        
     if not empirical_peaks_df.empty:
         peak_data_row = empirical_peaks_df.iloc[0]
         for metric_name in empirical_peaks_df.columns:
@@ -831,7 +840,6 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
     ammolite__numActiveCUs = ammolite__build_in["numActiveCUs"]
     ammolite__kernelBusyCycles = ammolite__build_in["kernelBusyCycles"]
     ammolite__hbmBandwidth = ammolite__build_in["hbmBandwidth"]
-
     # Hmmm... apply + lambda should just work
     # df['Value'] = df['Value'].apply(lambda s: eval(compile(str(s), '<string>', 'eval')))
     for id, df in dfs.items():
@@ -903,10 +911,7 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
 
                                 try:
                                     out = eval(compile(row[expr], "<string>", "eval"))
-
-                                    if isinstance(out, pd.Series):
-                                        row[expr] = out
-                                    elif np.isnan(out):
+                                    if np.isnan(out):
                                         row[expr] = ""
                                     else:
                                         row[expr] = out
@@ -926,7 +931,7 @@ def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
                                 # as string but not nubmer if there is NONE
                                 row[expr] = ""
 
-            # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+
 
 
 @demarcate
@@ -1466,7 +1471,6 @@ def load_table_data(workload, dir, is_gui, args, skipKernelTop=False):
     """
     if not skipKernelTop:
         load_kernel_top(workload, dir, args)
-
     eval_metric(
         workload.dfs,
         workload.dfs_type,
