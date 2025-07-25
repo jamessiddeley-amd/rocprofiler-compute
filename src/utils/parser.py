@@ -94,6 +94,7 @@ supported_call = {
     # If it has args like list [], in which turn to a python function.
     "MIN": "to_min",
     "MAX": "to_max",
+    "SUM": "to_sum",
     # simple aggr
     "AVG": "to_avg",
     "MEDIAN": "to_median",
@@ -132,6 +133,18 @@ def to_max(*args):
         return np.nan
     else:
         return max(args)
+    
+def to_sum(a):
+    if str(type(a)) == "<class 'NoneType'>":
+        return np.nan
+    elif np.isnan(a).all():
+        return np.nan
+    elif a.empty:
+        return np.nan
+    elif isinstance(a, pd.core.series.Series):
+        return a.sum()
+    else:
+        raise Exception("to_sum: unsupported type.")
 
 
 def to_avg(a):
@@ -682,7 +695,7 @@ def build_metric_value_string(dfs, dfs_type, normal_unit):
 
 
 @demarcate
-def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
+def eval_metric(dfs, dfs_type, sys_info, empirical_peaks_df, raw_pmc_df, debug):
     """
     Execute the expr string for each metric in the df.
     """
@@ -773,6 +786,22 @@ def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
             "wave_size is not available in sysinfo.csv, please provide the correct value using --specs-correction"
         )
 
+    ammolite__mfma_multiplier_default = 512
+    ammolite__cache_line_bytes = 64
+    ammolite__lds_transaction_bytes = 4
+    ammolite__hbm_bubble_transaction_bytes = 128
+    ammolite__hbm_ea_rd_32b_transaction_bytes = 32
+    ammolite__hbm_ea_rd_other_transaction_bytes = 64
+    ammolite__hbm_ea_wr_non_64b_transaction_bytes = 32
+    ammolite__hbm_ea_wr_64b_transaction_bytes = 64
+        
+    if not empirical_peaks_df.empty:
+        peak_data_row = empirical_peaks_df.iloc[0]
+        for metric_name in empirical_peaks_df.columns:
+            var_name = f"ammolite__{metric_name}_empirical_peak"
+            locals()[var_name] = peak_data_row[metric_name]
+
+
     # TODO: fix all $normUnit in Unit column or title
 
     # build and eval all derived build-in global variables
@@ -811,7 +840,6 @@ def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
     ammolite__numActiveCUs = ammolite__build_in["numActiveCUs"]
     ammolite__kernelBusyCycles = ammolite__build_in["kernelBusyCycles"]
     ammolite__hbmBandwidth = ammolite__build_in["hbmBandwidth"]
-
     # Hmmm... apply + lambda should just work
     # df['Value'] = df['Value'].apply(lambda s: eval(compile(str(s), '<string>', 'eval')))
     for id, df in dfs.items():
@@ -883,7 +911,6 @@ def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
 
                                 try:
                                     out = eval(compile(row[expr], "<string>", "eval"))
-
                                     if np.isnan(out):
                                         row[expr] = ""
                                     else:
@@ -904,7 +931,7 @@ def eval_metric(dfs, dfs_type, sys_info, raw_pmc_df, debug):
                                 # as string but not nubmer if there is NONE
                                 row[expr] = ""
 
-            # print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+
 
 
 @demarcate
@@ -1196,7 +1223,7 @@ def load_pc_sampling_data_per_kernel(
             next_index = i + 1
             if next_index < len(filtered_sorted_list):  # Ensure the next item exists
                 next_item = filtered_sorted_list[next_index]
-                kernel_info["potential_end_offset"] = next_item[
+                kernel_info["potential_end_offset"] = item[
                     "kernel_code_entry_byte_offset"
                 ]
             else:
@@ -1444,11 +1471,11 @@ def load_table_data(workload, dir, is_gui, args, skipKernelTop=False):
     """
     if not skipKernelTop:
         load_kernel_top(workload, dir, args)
-
     eval_metric(
         workload.dfs,
         workload.dfs_type,
         workload.sys_info.iloc[0],
+        workload.roofline_peaks,
         apply_filters(workload, dir, is_gui, args.debug),
         args.debug,
     )

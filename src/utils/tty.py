@@ -113,7 +113,16 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # For backward compatibility
         filter_panel_ids = [
             name for name, type in filter_panel_ids.items() if type == "metric_id"
+    filter_panel_ids = profiling_config.get("filter_blocks", [])
+    if isinstance(filter_panel_ids, dict):
+        # For backward compatibility
+        filter_panel_ids = [
+            name for name, type in filter_panel_ids.items() if type == "metric_id"
         ]
+    filter_panel_ids = [
+        int(convert_metric_id_to_panel_info(metric_id)[0])
+        for metric_id in filter_panel_ids
+    ]
     filter_panel_ids = [
         int(convert_metric_id_to_panel_info(metric_id)[0])
         for metric_id in filter_panel_ids
@@ -123,6 +132,7 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # Skip panels that don't support baseline comparison
         if len(args.path) > 1 and panel_id in config.HIDDEN_SECTIONS:
             continue
+        ss = ""  # store content of all data_source from one panel
         ss = ""  # store content of all data_source from one panel
 
         for data_source in panel["data source"]:
@@ -194,6 +204,7 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
                     base_df = convert_time_columns(base_df, args.time_unit)
 
                 df = pd.DataFrame(index=base_df.index)
+
 
                 for header in list(base_df.keys()):
                     if (
@@ -410,6 +421,14 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
             print("\n" + "-" * 80, file=output)
             print(str(panel_id // 100) + ". " + panel["title"], file=output)
             print(ss, file=output)
+        
+        # Show roofline
+        # Check if we have filter_metrics for analyze stage:
+        # no filter_metrics = show all, filter_metrics containing "4" = user requesting roofline chart
+        if panel_id == 400 and (
+        "4" in args.filter_metrics
+        or not args.filter_metrics):
+            show_roof_plot(roof_plot)
 
 
 def show_roof_plot(roof_plot):
