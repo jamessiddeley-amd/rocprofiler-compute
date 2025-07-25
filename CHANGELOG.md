@@ -25,11 +25,11 @@ Full documentation for ROCm Compute Profiler is available at [https://rocm.docs.
   * -b option in profile mode also accept hardware IP block for filtering, however, this support will be deprecated soon
   * --list-metrics option added in profile mode to list possible metric id(s), similar to analyze mode
 
-* Datatype selection option for roofline profiling
-  * --roofline-data-type / -R option added to specify which datatypes the user wants to capture in the roofline PDF plot outputs
+* Data type selection option for roofline profiling
+  * --roofline-data-type / -R option added to specify which data types the user wants to capture in the roofline PDF plot outputs
   * Default is FP32, but user can specify as many types as desired to overlay on the same plot output
 
-* Additional datatypes for roofline profiling
+* Additional data types for roofline profiling
   * Now supports FP4, FP6, FP8, FP16, BF16, FP32, FP64, I8, I32, I64 (dependent on gpu architecture)
 
 * Support host-trap PC Sampling on CLI (beta version)
@@ -40,7 +40,7 @@ Full documentation for ROCm Compute Profiler is available at [https://rocm.docs.
   * Scheduler-Pipe Wave Utilization
   * Scheduler FIFO Full Rate
   * CPC ADC Utilization
-  * F6F4 datatype metrics
+  * F6F4 data type metrics
   * Update formula for total FLOPs while taking into account F6F4 ops
   * LDS STORE, LDS LOAD, LDS ATOMIC instruction count metrics
   * LDS STORE, LDS LOAD, LDS ATOMIC bandwidth metrics
@@ -77,17 +77,36 @@ Full documentation for ROCm Compute Profiler is available at [https://rocm.docs.
   * VGPR Writes
   * Total FLOPs (consider fp6 and fp4 ops)
 * Update Dash to >=3.0.0 (for web UI)
+* Change when Roofline PDFs are generated- during general profiling and --roof-only profiling (skip only when --no-roof option is present)
+* Update Roofline binaries
+  * Rebuild using latest ROCm stack
+  * OS distribution support minimum for roofline feature is now Ubuntu22.04, RHEL9, and SLES15SP6
+* Improve analysis block based filtering to accept metric id level filtering
+  * This can be used to collect individual metrics from various sections of analysis config
+* CLI analysis mode baseline comparison will now only compare common metrics across workloads and will not show Metric ID
+  * Remove metrics from analysis configuration files which are explicitly marked as empty or None
+
+### Optimized
+
+* ROCm Compute Profiler CLI has been improved to better display the GPU architecture analytics
+* Improved `--time-unit` option in analyze mode to apply time unit conversion across all analysis sections, not just kernel top stats.
 
 ### Resolved issues
 
+* Fixed MI 100 counters not being collected when rocprofv3 is used
 * Fixed option specs-correction
 * Fixed kernel name and kernel dispatch filtering when using rocprof v3
 * Fixed not collecting TCC channel counters in rocprof v3
 * Fixed peak FLOPS of F8 I8 F16 and BF16 on MI300
+* Fixed not detecting memory clock issue when using amd-smi
+* Fixed standalone GUI crashing
+* Fixed L2 read/write/atomic bandwidths on MI350
 
 ### Known issues
 
-* Profiling on MI 100 will not work unless ROCPROF=rocprofv1 environment variable is explictly provided
+* On MI 100, accumulation counters will not be collected and the following metrics will not show up in analysis: Instruction Fetch Latency, Wavefront Occupancy, LDS Latency
+  * As a workaround, use ROCPROF=rocprof environement variable, to use rocprofv1 for profiling on MI 100
+
 * GPU id filtering is not supported when using rocprof v3
 
 * Analysis of previously collected workload data will not work due to sysinfo.csv schema change
@@ -98,9 +117,14 @@ Full documentation for ROCm Compute Profiler is available at [https://rocm.docs.
 * Analysis of new workloads might require providing shader/memory clock speed using
 --specs-correction operation if `amd-smi` or `rocminfo` does not provide clock speeds.
 
+* Memory chart on CLI might look corrupted if CLI width is too narrow
+
 ### Removed
 
 * Roofline support for Ubuntu 20.04 and SLES below 15.6
+* Usage of rocm-smi
+* Remove support for MI50/MI60 in accordance with the documentation
+* Hardware IP block based filtering has been removed in favor of analysis report block based filtering
 
 ## ROCm Compute Profiler 3.1.0 for ROCm 6.4.0
 
