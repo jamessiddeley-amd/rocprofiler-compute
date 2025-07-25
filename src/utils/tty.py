@@ -113,6 +113,7 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # For backward compatibility
         filter_panel_ids = [
             name for name, type in filter_panel_ids.items() if type == "metric_id"
+        ]
     filter_panel_ids = profiling_config.get("filter_blocks", [])
     if isinstance(filter_panel_ids, dict):
         # For backward compatibility
@@ -132,7 +133,6 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # Skip panels that don't support baseline comparison
         if len(args.path) > 1 and panel_id in config.HIDDEN_SECTIONS:
             continue
-        ss = ""  # store content of all data_source from one panel
         ss = ""  # store content of all data_source from one panel
 
         for data_source in panel["data source"]:
@@ -157,15 +157,6 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
                     console_log(
                         f"Not showing table not selected during profiling: {table_id_str} {table_config['title']}"
                     )
-                    continue
-
-                # Show roofline
-                # Check if we have filter_metrics for analyze stage:
-                # no filter_metrics = show all, filter_metrics containing "4" = user requesting roofline chart
-                if panel_id == 400 and (
-                    not args.filter_metrics or "4" in args.filter_metrics
-                ):
-                    show_roof_plot(roof_plot)
                     continue
 
                 # Metrics baseline comparison mode
@@ -426,10 +417,10 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # Check if we have filter_metrics for analyze stage:
         # no filter_metrics = show all, filter_metrics containing "4" = user requesting roofline chart
         if panel_id == 400 and (
-        not args.filter_metrics or "4" in args.filter_metrics
+            not args.filter_metrics or "4" in args.filter_metrics
         ):
             show_roof_plot(roof_plot)
-
+            continue
 
 def show_roof_plot(roof_plot):
     # TODO: short term solution to display roofline plot
