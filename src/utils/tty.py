@@ -426,8 +426,8 @@ def show_all(args, runs, archConfigs, output, profiling_config, roof_plot=None):
         # Check if we have filter_metrics for analyze stage:
         # no filter_metrics = show all, filter_metrics containing "4" = user requesting roofline chart
         if panel_id == 400 and (
-        "4" in args.filter_metrics
-        or not args.filter_metrics):
+        not args.filter_metrics or "4" in args.filter_metrics
+        ):
             show_roof_plot(roof_plot)
 
 
