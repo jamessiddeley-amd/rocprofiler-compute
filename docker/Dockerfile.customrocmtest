@@ -33,9 +33,9 @@ RUN apt-get remove -y python3-blinker
 
 # Install rocm
 # Define custom version
-ARG DEB_FILE=""
-ARG AMDGPU_BUILD=""
-ARG ROCM_BUILD=""
+ARG DEB_FILE="amdgpu-install-internal_7.1-22.04-1_all.deb"
+ARG AMDGPU_BUILD="2190006"
+ARG ROCM_BUILD="16424"
 RUN curl -O "https://artifactory-cdn.amd.com/artifactory/list/amdgpu-deb/${DEB_FILE}"
 RUN apt-get install -y "./${DEB_FILE}"
 RUN amdgpu-repo --amdgpu-build="${AMDGPU_BUILD}" --rocm-build="compute-rocm-dkms-no-npi-hipclang/${ROCM_BUILD}"

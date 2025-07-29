@@ -25,6 +25,7 @@
 import copy
 import os
 import sys
+import textwrap
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
@@ -95,15 +96,28 @@ class OmniAnalyze_Base:
                     sys_info.iloc[0],
                 )
 
+            metric_descriptions = {
+                k: v
+                for dfs in self._arch_configs[args.list_metrics].dfs.values()
+                for k, v in dfs.to_dict().get("Description", {}).items()
+            }
             for key, value in self._arch_configs[args.list_metrics].metric_list.items():
                 prefix = ""
+                description = ""
                 if "." not in str(key):
                     prefix = ""
                 elif str(key).count(".") == 1:
                     prefix = "\t"
                 else:
                     prefix = "\t\t"
-                print(prefix + key, "->", value)
+                    description = metric_descriptions.get(key, "")
+                print(prefix + key, "->", value + "\n")
+                if description:
+                    print(
+                        prefix
+                        + f"\n{prefix}".join(textwrap.wrap(description, width=40))
+                        + "\n"
+                    )
             sys.exit(0)
         else:
             console_error("Unsupported arch")
@@ -113,11 +127,13 @@ class OmniAnalyze_Base:
         if not normalization_filter:
             for k, v in self._arch_configs.items():
                 parser.build_metric_value_string(
-                    v.dfs, v.dfs_type, self.__args.normal_unit
+                    v.dfs, v.dfs_type, self.__args.normal_unit, self._profiling_config
                 )
         else:
             for k, v in self._arch_configs.items():
-                parser.build_metric_value_string(v.dfs, v.dfs_type, normalization_filter)
+                parser.build_metric_value_string(
+                    v.dfs, v.dfs_type, normalization_filter, self._profiling_config
+                )
 
         args = self.__args
         # Error checking for multiple runs and multiple kernel filters
@@ -172,12 +188,13 @@ class OmniAnalyze_Base:
             )
             w.sys_info = file_io.load_sys_info(sysinfo_path.joinpath("sysinfo.csv"))
             
+            #Rename roofline.csv columns to match the schema
+            #This is done to ensure robustness against changes in the roofline.csv file and improve readability.
             if not getattr(self.get_args(), "no_roof", False):
                 try:
                     roofline_path = sysinfo_path.joinpath("roofline.csv")
                     roofline_df = file_io.load_roofline_peaks(roofline_path)
 
-                    # Use the comprehensive master map
                     column_map = {
                         # Bandwidths
                         'HBMBw': 'HBM_Bandwidth',

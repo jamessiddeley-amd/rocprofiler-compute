@@ -31,7 +31,7 @@ import pandas as pd
 import yaml
 
 import config
-from utils import schema
+from utils import rocpd_data, schema
 from utils.kernel_name_shortener import kernel_name_shortener
 from utils.logger import console_debug, console_error, console_log, demarcate
 
@@ -106,9 +106,7 @@ def load_profiling_config(config_dir):
             prof_config = yaml.safe_load(file)
             return prof_config
     except FileNotFoundError:
-        console_log(
-            f"Could not find profiling_config.yaml in {config_dir} for filtering analysis report"
-        )
+        console_log(f"Could not find profiling_config.yaml in {config_dir}")
     return dict()
 
 
@@ -206,7 +204,7 @@ def create_df_kernel_top_stats(
 
 @demarcate
 def create_df_pmc(
-    raw_data_root_dir, nodes, spatial_multiplexing, kernel_verbose, verbose
+    raw_data_root_dir, nodes, spatial_multiplexing, kernel_verbose, verbose, config
 ):
     """
     Load all raw pmc counters and join into one df.
@@ -225,6 +223,8 @@ def create_df_pmc(
                     f == schema.pmc_perf_file_prefix + ".csv"
                 ):
                     tmp_df = pd.read_csv(str(Path(root).joinpath(f)))
+                    if config.get("format_rocprof_output") == "rocpd":
+                        tmp_df = rocpd_data.process_rocpd_csv(tmp_df)
                     # Demangle original KernelNames
                     kernel_name_shortener(tmp_df, kernel_verbose)
 
