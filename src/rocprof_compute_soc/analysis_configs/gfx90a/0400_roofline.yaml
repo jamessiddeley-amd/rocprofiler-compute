@@ -123,14 +123,13 @@ Panel Config:
         unit: Unit
       metric:
         Total_FLOPs:
-          value: 'SUM(($wave_size * ( (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16
+          value: SUM(($wave_size * ( (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16
             + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) + (SQ_INSTS_VALU_ADD_F32
             + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)
             + (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64)
             + SQ_INSTS_VALU_TRANS_F64) )) + (SQ_INSTS_VALU_MFMA_MOPS_F16 * 512) +
             (SQ_INSTS_VALU_MFMA_MOPS_BF16 * 512) + (SQ_INSTS_VALU_MFMA_MOPS_F32 *
-            512) + (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512)) # NOTE: F8/F6/F4 MFMA counters
-            are excluded as they are unsupported on gfx90a per SUPPORTED_DATATYPES'
+            512) + (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512))
           unit: FLOPs
         Total VALU FLOPs:
           value: SUM(($wave_size * ( (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16
@@ -155,24 +154,23 @@ Panel Config:
           value: SUM(((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) * 4 * $lds_banks_per_cu))
           unit: Bytes
         AI_HBM:
-          value: "(\n  SUM(\n    ($wave_size * (\n      (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16\
-            \ + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +\n      (SQ_INSTS_VALU_ADD_F32\
-            \ + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)\
-            \ +\n      (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64)\
-            \ + SQ_INSTS_VALU_TRANS_F64)\n    )) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F16\
-            \ * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_BF16 * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F32\
-            \ * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512)\n  ) /\n  SUM(\n \
-            \   (TCC_EA_RDREQ_32B_sum * 32) +\n    ((TCC_EA_RDREQ_sum - TCC_EA_RDREQ_32B_sum)\
-            \ * 64) +\n    (TCC_EA_WRREQ_64B_sum * 64) +\n    ((TCC_EA_WRREQ_sum -\
-            \ TCC_EA_WRREQ_64B_sum) * 32)\n  )\n)\n"
+          value: ( SUM( ($wave_size * ( (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16
+            + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) + (SQ_INSTS_VALU_ADD_F32
+            + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)
+            + (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64)
+            + SQ_INSTS_VALU_TRANS_F64) )) + (SQ_INSTS_VALU_MFMA_MOPS_F16 * 512) +
+            (SQ_INSTS_VALU_MFMA_MOPS_BF16 * 512) + (SQ_INSTS_VALU_MFMA_MOPS_F32 *
+            512) + (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512) ) / SUM( (TCC_EA_RDREQ_32B_sum
+            * 32) + ((TCC_EA_RDREQ_sum - TCC_EA_RDREQ_32B_sum) * 64) + (TCC_EA_WRREQ_64B_sum
+            * 64) + ((TCC_EA_WRREQ_sum - TCC_EA_WRREQ_64B_sum) * 32) ) )
           unit: FLOPs/Byte
         Performance_GFLOPs:
-          value: "(\n  SUM(\n    ($wave_size * (\n      (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16\
-            \ + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +\n      (SQ_INSTS_VALU_ADD_F32\
-            \ + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)\
-            \ +\n      (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64)\
-            \ + SQ_INSTS_VALU_TRANS_F64)\n    )) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F16\
-            \ * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_BF16 * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F32\
-            \ * 512) +\n    (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512)\n  ) /\n  (SUM(End_Timestamp\
-            \ - Start_Timestamp) / 1e9)\n) / 1e9\n"
+          value: ( SUM( ($wave_size * ( (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16
+            + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) + (SQ_INSTS_VALU_ADD_F32
+            + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32)
+            + (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64)
+            + SQ_INSTS_VALU_TRANS_F64) )) + (SQ_INSTS_VALU_MFMA_MOPS_F16 * 512) +
+            (SQ_INSTS_VALU_MFMA_MOPS_BF16 * 512) + (SQ_INSTS_VALU_MFMA_MOPS_F32 *
+            512) + (SQ_INSTS_VALU_MFMA_MOPS_F64 * 512) ) / (SUM(End_Timestamp - Start_Timestamp)
+            / 1e9) ) / 1e9
           unit: GFLOP/s
