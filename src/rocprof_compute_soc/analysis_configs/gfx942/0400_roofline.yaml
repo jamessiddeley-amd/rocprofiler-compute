@@ -62,7 +62,7 @@ Panel Config:
             + SQ_INSTS_VALU_TRANS_F64) )) / ((End_Timestamp - Start_Timestamp) / 1e9))
             / 1e9)
           unit: GFLOP/s
-          peak: None
+          peak: (((($max_sclk * $cu_per_gpu) * 64) * 2) / 1000)
         MFMA FLOPs (F64):
           value: AVG((((SQ_INSTS_VALU_MFMA_MOPS_F64 * 512)) / ((End_Timestamp - Start_Timestamp)
             / 1e9)) / 1e9)
