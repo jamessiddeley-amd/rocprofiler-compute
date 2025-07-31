@@ -3196,7 +3196,7 @@ panels:
           # TABLE 2: (RAW COUNTS) for GFX90a
           # These should be SUMMED across all dispatches to get a total.
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3214,7 +3214,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((
               (TCC_EA_RDREQ_32B_sum * 32) +
               ((TCC_EA_RDREQ_sum - TCC_EA_RDREQ_32B_sum) * 64) +
@@ -3239,7 +3239,7 @@ panels:
           # FINAL ROOFLINE METRICS for GFX90a
           # These use the SUM of flops and SUM of bytes.
           # ==================================================================
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3261,7 +3261,7 @@ panels:
               )
             unit: FLOPs/Byte
 
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3281,7 +3281,7 @@ panels:
           # ==================================================================
           # TABLE 2: (RAW COUNTS) for GFX908
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3300,7 +3300,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((TCC_BUBBLE_sum * 128) +
               (TCC_EA0_RDREQ_32B_sum * 32) +
               ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 64) +
@@ -3319,7 +3319,7 @@ panels:
             value: SUM(((SQ_LDS_IDX_ACTIVE - SQ_LDS_BANK_CONFLICT) *
               4 * $lds_banks_per_cu))
             unit: Bytes
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3342,7 +3342,7 @@ panels:
               )
               )
             unit: FLOPs/Byte
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3363,7 +3363,7 @@ panels:
           # ==================================================================
           # TABLE 2: (RAW COUNTS) for GFX940
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3382,7 +3382,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((TCC_BUBBLE_sum * 128) +
               (TCC_EA0_RDREQ_32B_sum * 32) +
               ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 64) +
@@ -3404,7 +3404,7 @@ panels:
           # ==================================================================
           # FINAL ROOFLINE METRICS for GFX940
           # ==================================================================
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3427,7 +3427,7 @@ panels:
               )
               )
             unit: FLOPs/Byte
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3448,7 +3448,7 @@ panels:
           # ==================================================================
           # TABLE 2: (RAW COUNTS) for GFX941
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3467,7 +3467,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((TCC_BUBBLE_sum * 128) +
               (TCC_EA0_RDREQ_32B_sum * 32) +
               ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 64) +
@@ -3489,7 +3489,7 @@ panels:
           # ==================================================================
           # FINAL ROOFLINE METRICS for GFX941
           # ==================================================================
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3512,7 +3512,7 @@ panels:
               )
               )
             unit: FLOPs/Byte
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3534,7 +3534,7 @@ panels:
           # TABLE 2: (RAW COUNTS)
           # Summed across all dispatches to get a total.
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3553,7 +3553,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((TCC_BUBBLE_sum * 128) +
               (TCC_EA0_RDREQ_32B_sum * 32) +
               ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 64) +
@@ -3577,7 +3577,7 @@ panels:
           # FINAL ROOFLINE METRICS
           # These use the SUM of flops and SUM of bytes.
           # ==================================================================
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3601,7 +3601,7 @@ panels:
               )
             unit: FLOPs/Byte
 
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3623,7 +3623,7 @@ panels:
           # TABLE 2: (RAW COUNTS) for GFX950
           # These should be SUMMED across all dispatches to get a total.
           # ==================================================================
-          Total_FLOPs:
+          Total Flops:
             value: SUM(($wave_size * (
               (SQ_INSTS_VALU_ADD_F16 + SQ_INSTS_VALU_MUL_F16 + (2 * SQ_INSTS_VALU_FMA_F16) + SQ_INSTS_VALU_TRANS_F16) +
               (SQ_INSTS_VALU_ADD_F32 + SQ_INSTS_VALU_MUL_F32 + (2 * SQ_INSTS_VALU_FMA_F32) + SQ_INSTS_VALU_TRANS_F32) +
@@ -3643,7 +3643,7 @@ panels:
               (SQ_INSTS_VALU_ADD_F64 + SQ_INSTS_VALU_MUL_F64 + (2 * SQ_INSTS_VALU_FMA_F64) + SQ_INSTS_VALU_TRANS_F64)
               )))
             unit: FLOPs
-          Total_HBM_Data:
+          Total HBM Data:
             value: SUM(((TCC_BUBBLE_sum * 128) +
               (TCC_EA0_RDREQ_32B_sum * 32) +
               ((TCC_EA0_RDREQ_sum - TCC_BUBBLE_sum - TCC_EA0_RDREQ_32B_sum) * 64) +
@@ -3667,7 +3667,7 @@ panels:
           # FINAL ROOFLINE METRICS for GFX950
           # These use the SUM of flops and SUM of bytes.
           # ==================================================================
-          AI_HBM:
+          AI HBM:
             value: (
               SUM(
                 ($wave_size * (
@@ -3691,7 +3691,7 @@ panels:
               )
               )
             unit: FLOPs/Byte
-          Performance_GFLOPs:
+          Performance GFLOPs:
             value: (
               SUM(
                 ($wave_size * (
@@ -3806,7 +3806,7 @@ panels:
         plain: ''
         rst: ''
         unit: GB/s
-      Total_FLOPs:
+      Total Flops:
         plain: ''
         rst: ''
         unit: FLOPs
@@ -3814,7 +3814,7 @@ panels:
         plain: ''
         rst: ''
         unit: FLOPs
-      Total_HBM_Data:
+      Total HBM Data:
         plain: ''
         rst: ''
         unit: Bytes
@@ -3830,11 +3830,11 @@ panels:
         plain: ''
         rst: ''
         unit: Bytes
-      AI_HBM:
+      AI HBM:
         plain: ''
         rst: ''
         unit: FLOPs/Byte
-      Performance_GFLOPs:
+      Performance GFLOPs:
         plain: ''
         rst: ''
         unit: GFLOP/s
