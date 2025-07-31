@@ -188,55 +188,16 @@ class OmniAnalyze_Base:
             )
             w.sys_info = file_io.load_sys_info(sysinfo_path.joinpath("sysinfo.csv"))
             
-            #Rename roofline.csv columns to match the schema
-            #This is done to ensure robustness against changes in the roofline.csv file and improve readability.
             if not getattr(self.get_args(), "no_roof", False):
                 try:
                     roofline_path = sysinfo_path.joinpath("roofline.csv")
                     roofline_df = file_io.load_roofline_peaks(roofline_path)
-
-                    column_map = {
-                        # Bandwidths
-                        'HBMBw': 'HBM_Bandwidth',
-                        'MALLBw': 'MALL_Bandwidth',
-                        'L2Bw': 'L2_Cache_Bandwidth',
-                        'L1Bw': 'L1_Cache_Bandwidth',
-                        'LDSBw': 'LDS_Bandwidth',
-                        
-                        # VALU Ops (non-MFMA)
-                        'FP8Flops':  'VALU_FLOPs_FP8',
-                        'FP16Flops': 'VALU_FLOPs_FP16',
-                        'BF16Flops': 'VALU_FLOPs_BF16',
-                        'FP32Flops': 'VALU_FLOPs_FP32',
-                        'FP64Flops': 'VALU_FLOPs_FP64',
-                        'I8Ops':     'VALU_IOPs_Int8',
-                        'I32Ops':    'VALU_IOPs_Int32',
-                        'I64Ops':    'VALU_IOPs_Int64',
-
-                        # MFMA Ops
-                        'MFMAF4Flops':   'MFMA_FLOPs_F4',
-                        'MFMAF6Flops':   'MFMA_FLOPs_F6',
-                        'MFMAF8Flops':   'MFMA_FLOPs_F8',
-                        'MFMAF16Flops':  'MFMA_FLOPs_F16',
-                        'MFMABF16Flops': 'MFMA_FLOPs_BF16',
-                        'MFMAF32Flops':  'MFMA_FLOPs_F32',
-                        'MFMAF64Flops':  'MFMA_FLOPs_F64',
-                        'MFMAI8Ops':     'MFMA_IOPs_Int8'
-                    }
-
-                    # Rename whatever columns from the map are present in this file
-                    roofline_df.rename(columns=column_map, inplace=True)
                     
-                    # **This is the key change for robustness**
-                    # 1. Get all possible descriptive names from our map.
-                    all_possible_names = list(column_map.values())
-                    # 2. Find which of these names *actually exist* in the current DataFrame.
-                    existing_names = [name for name in all_possible_names if name in roofline_df.columns]
-                    # 3. Keep only the columns that are present in this specific roofline.csv.
-                    w.roofline_peaks = roofline_df[existing_names]
+                    # Use the original column names from roofline.csv directly
+                    w.roofline_peaks = roofline_df
 
                 except FileNotFoundError:
-                    console_warning(f"roofline.csv not found. Peak values will be unavailable.")
+                    console_warning(f"roofline.csv not found.")
                     w.roofline_peaks = file_io.create_empty_dataframe()
             else:
                 w.roofline_peaks = file_io.create_empty_dataframe()
