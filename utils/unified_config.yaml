@@ -3726,85 +3726,117 @@ panels:
       MFMA FLOPs (F8):
         plain: The total number of 8-bit brain floating point MFMA operations executed
           per second. This does not include any 16-bit brain floating point operations
-          from VALU instructions. This is also presented as a percent of the peak theoretical
-          F8 MFMA operations achievable on the specific accelerator. It is supported
-          on AMD Instinct MI300 series and later only.
+          from VALU instructions. The peak empirically measured F8 MFMA operations
+          achievable on the specific accelerator is displayed alongside for comparison.
+          It is supported on AMD Instinct MI300 series and later only.
         rst: 'The total number of 8-bit brain floating point :ref:`MFMA <desc-mfma>`
           operations executed per second. Note: this does not include any 16-bit brain
-          floating point operations from :ref:`VALU <desc-valu>` instructions. This
-          is also presented as a percent of the peak theoretical F8 MFMA operations
-          achievable on the specific accelerator. It is supported on AMD Instinct MI300
-          series and later only.'
+          floating point operations from :ref:`VALU <desc-valu>` instructions. The
+          peak empirically measured F8 MFMA operations achievable on the specific
+          accelerator is displayed alongside for comparison. It is supported on AMD
+          Instinct MI300 series and later only.'
         unit: GFLOPs
       MFMA FLOPs (BF16):
         plain: 'The total number of 16-bit brain floating point MFMA operations executed
-          per second. Note: this does not include any 16-bit brain floating point operations
-          from VALU instructions. This is also presented as a percent of the peak theoretical
-          BF16 MFMA operations achievable on the specific accelerator.'
+          per second. Note: this does not include any 16-bit brain floating point
+          operations from VALU instructions. The peak empirically measured BF16 MFMA
+          operations achievable on the specific accelerator is displayed alongside
+          for comparison.'
         rst: 'The total number of 16-bit brain floating point :ref:`MFMA <desc-mfma>`
           operations executed per second. Note: this does not include any 16-bit brain
-          floating point operations from :ref:`VALU <desc-valu>` instructions. This
-          is also presented as a percent of the peak theoretical BF16 MFMA operations
-          achievable on the specific accelerator.'
+          floating point operations from :ref:`VALU <desc-valu>` instructions. The
+          peak empirically measured BF16 MFMA operations achievable on the specific
+          accelerator is displayed alongside for comparison.'
         unit: GFLOPs
       MFMA FLOPs (F16):
         plain: 'The total number of 16-bit floating point MFMA operations executed per
           second. Note: this does not include any 16-bit floating point operations from
-          VALU instructions. This is also presented as a percent of the peak theoretical
-          F16 MFMA operations achievable on the specific accelerator.'
+          VALU instructions. The peak empirically measured F16 MFMA operations
+          achievable on the specific accelerator is displayed alongside for comparison.'
         rst: 'The total number of 16-bit floating point :ref:`MFMA <desc-mfma>` operations
           executed per second. Note: this does not include any 16-bit floating point
-          operations from :ref:`VALU <desc-valu>` instructions. This is also presented
-          as a percent of the peak theoretical F16 MFMA operations achievable on the
-          specific accelerator.'
+          operations from :ref:`VALU <desc-valu>` instructions. The peak empirically
+          measured F16 MFMA operations achievable on the specific accelerator is
+          displayed alongside for comparison.'
         unit: GFLOPs
       MFMA FLOPs (F32):
         plain: 'The total number of 32-bit floating point MFMA operations executed per
           second. Note: this does not include any 32-bit floating point operations from
-          VALU instructions. This is also presented as a percent of the peak theoretical
-          F32 MFMA operations achievable on the specific accelerator.'
+          VALU instructions. The peak empirically measured F32 MFMA operations
+          achievable on the specific accelerator is displayed alongside for comparison.'
         rst: 'The total number of 32-bit floating point :ref:`MFMA <desc-mfma>` operations
           executed per second. Note: this does not include any 32-bit floating point
-          operations from :ref:`VALU <desc-valu>` instructions. This is also presented
-          as a percent of the peak theoretical F32 MFMA operations achievable on the
-          specific accelerator.'
+          operations from :ref:`VALU <desc-valu>` instructions. The peak empirically
+          measured F32 MFMA operations achievable on the specific accelerator is
+          displayed alongside for comparison.'
         unit: GFLOPs
       MFMA FLOPs (F64):
         plain: 'The total number of 64-bit floating point MFMA operations executed per
           second. Note: this does not include any 64-bit floating point operations from
-          VALU instructions. This is also presented as a percent of the peak theoretical
-          F64 MFMA operations achievable on the specific accelerator.'
+          VALU instructions. The peak empirically measured F64 MFMA operations
+          achievable on the specific accelerator is displayed alongside for comparison.'
         rst: 'The total number of 64-bit floating point :ref:`MFMA <desc-mfma>` operations
           executed per second. Note: this does not include any 64-bit floating point
-          operations from :ref:`VALU <desc-valu>` instructions. This is also presented
-          as a percent of the peak theoretical F64 MFMA operations achievable on the
-          specific accelerator.'
+          operations from :ref:`VALU <desc-valu>` instructions. The peak empirically
+          measured F64 MFMA operations achievable on the specific accelerator is
+          displayed alongside for comparison.'
         unit: GFLOPs
       MFMA IOPs (Int8):
         plain: 'The total number of 8-bit integer MFMA operations executed per second.
           Note: this does not include any 8-bit integer operations from VALU instructions.
-          This is also presented as a percent of the peak theoretical INT8 MFMA operations
-          achievable on the specific accelerator.'
+          The peak empirically measured INT8 MFMA operations achievable on the specific
+          accelerator is displayed alongside for comparison.'
         rst: 'The total number of 8-bit integer :ref:`MFMA <desc-mfma>` operations executed
           per second. Note: this does not include any 8-bit integer operations from
-          :ref:`VALU <desc-valu>` instructions. This is also presented as a percent
-          of the peak theoretical INT8 MFMA operations achievable on the specific accelerator.'
+          :ref:`VALU <desc-valu>` instructions. The peak empirically measured INT8 MFMA
+          operations achievable on the specific accelerator is displayed alongside
+          for comparison.'
         unit: GIOPs
       HBM Bandwidth:
         plain: ''
         rst: ''
         unit: GB/s
       L2 Cache Bandwidth:
-        plain: ''
-        rst: ''
+        plain: The number of bytes looked up in the L2 cache per unit time. The number
+          of bytes is calculated as the number of cache lines requested multiplied by
+          the cache line size. This value does not consider partial requests, so e.g.,
+          if only a single value is requested in a cache line, the data movement will
+          still be counted as a full cache line. The peak empirically measured bandwidth
+          achievable on the specific accelerator is displayed alongside for comparison.
+        rst: The number of bytes looked up in the L2 cache per unit time. The number of
+          bytes is calculated as the number of cache lines requested multiplied by
+          the cache line size. This value does not consider partial requests, so e.g.,
+          if only a single value is requested in a cache line, the data movement will
+          still be counted as a full cache line. The peak empirically measured
+          bandwidth achievable on the specific accelerator is displayed alongside
+          for comparison.
         unit: GB/s
       L1 Cache Bandwidth:
-        plain: ''
-        rst: ''
+        plain: The number of bytes looked up in the vL1D cache as a result of VMEM
+          instructions per unit time. The number of bytes is calculated as the number
+          of cache lines requested multiplied by the cache line size. This value does
+          not consider partial requests, so e.g., if only a single value is requested
+          in a cache line, the data movement will still be counted as a full cache line.
+          The peak empirically measured bandwidth achievable on the specific accelerator
+          is displayed alongside for comparison.
+        rst: The number of bytes looked up in the vL1D cache as a result of :ref:`VMEM
+          <desc-vmem>` instructions per unit time. The number of bytes is calculated
+          as the number of cache lines requested multiplied by the cache line size.
+          This value does not consider partial requests, so e.g., if only a single
+          value is requested in a cache line, the data movement will still be counted
+          as a full cache line. The peak empirically measured bandwidth achievable on
+          the specific accelerator is displayed alongside for comparison.
         unit: GB/s
       LDS Bandwidth:
-        plain: ''
-        rst: ''
+        plain: Indicates the maximum amount of bytes that could have been loaded from,
+          stored to, or atomically updated in the LDS per unit time (see LDS Bandwidth
+          example for more detail). The peak empirically measured LDS bandwidth
+          achievable on the specific accelerator is displayed alongside for comparison.
+        rst: Indicates the maximum amount of bytes that could have been loaded from,
+          stored to, or atomically updated in the LDS per unit time (see :ref:`LDS
+          Bandwidth <lds-bandwidth>` example for more detail). The peak empirically
+          measured LDS bandwidth achievable on the specific accelerator is displayed
+          alongside for comparison.
         unit: GB/s
       Total Flops:
         plain: ''
